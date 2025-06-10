@@ -1,0 +1,48 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: ./docker/app/Dockerfile
+    volumes:
+      - ./src/:/app
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - 5173:5173   # ← Vite用のポートを開放
+    environment:
+      VITE_DEV_SERVER: true
+
+  web:
+    build:
+      context: .
+      dockerfile: ./docker/web/Dockerfile
+    ports:
+      - 8080:80
+    depends_on:
+      - app
+      - db
+    volumes:
+      - ./src/:/app
+
+  db:
+    platform: linux/x86_64
+    build:
+      context: .
+      dockerfile: ./docker/db/Dockerfile
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: laravel_db
+      TZ: 'Asia/Tokyo'
+    volumes:
+      - mysql-volume:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mysql-volume:
