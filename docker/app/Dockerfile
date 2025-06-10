@@ -18,6 +18,9 @@ RUN apt-get update && \
 # 任意でNodeのバージョン確認
 RUN node -v && npm -v
 
+# Composerをインストール
+COPY --from=composer:2.2 /usr/bin/composer /usr/bin/composer
+
 COPY ./docker/app/php.ini /usr/local/etc/php/php.ini
 
 WORKDIR /app
