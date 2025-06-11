@@ -75,23 +75,35 @@ export default function Login({ status, canResetPassword }) {
                             }
                         />
                         <span className="ms-2 text-sm text-gray-600">
-                            Remember me
+                            次ログイン時からログイン状態を保持する
                         </span>
                     </label>
                 </div>
 
+                
+
                 <div className="mt-4 flex items-center justify-end">
+
+                    
+                        <Link                            
+                                 href={route('register')}
+                                className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                            >
+                        
+                            登録
+                        </Link>
+                           
                     {canResetPassword && (
                         <Link
                             href={route('password.request')}
                             className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                         >
-                            Forgot your password?
+                            パスワードを忘れた
                         </Link>
                     )}
 
                     <PrimaryButton className="ms-4" disabled={processing}>
-                        Log in
+                        ログイン
                     </PrimaryButton>
                 </div>
             </form>
