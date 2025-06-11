@@ -6,11 +6,11 @@ export default function Dashboard() {
         <AuthenticatedLayout
             header={
                 <h2 className="text-xl font-semibold leading-tight text-gray-800">
-                    Dashboard
+                    Corkboard
                 </h2>
             }
         >
-            <Head title="Dashboard" />
+            <Head title="Corkboard" />
 
             <div className="py-12">
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
