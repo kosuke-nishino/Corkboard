@@ -1,8 +1,12 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
 import MoveableCard from "@/Components/MoveableCard";
+import TaskForm from "@/Components/TaskForm"; // 追加
+import { useState } from 'react'; // 追加
 
 export default function Dashboard() {
+    const [showTaskForm, setShowTaskForm] = useState(false); // モーダル状態
+
     return (
         <AuthenticatedLayout>
             <Head title="Corkboard" />
@@ -22,7 +26,10 @@ export default function Dashboard() {
 
                 {/* 右上：作成ボタンたち */}
                 <div className="absolute top-4 right-4 flex gap-2">
-                    <button className="bg-blue-500 hover:bg-blue-600 text-white font-black py-2 px-4 rounded-full shadow">
+                    <button
+                        className="bg-blue-500 hover:bg-blue-600 text-white font-black py-2 px-4 rounded-full shadow"
+                        onClick={() => setShowTaskForm(true)}
+                    >
                         タスク作成
                     </button>
                     <button className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded-full shadow">
@@ -33,16 +40,20 @@ export default function Dashboard() {
                     </button>
                 </div>
 
+                {/* モーダル：タスク作成フォーム */}
+                {showTaskForm && (
+                    <TaskForm onClose={() => setShowTaskForm(false)} />
+                )}
+
                 {/* メイン領域（仮） */}
                 <div className="mt-24">
                     <p className="text-center text-gray-600">
                         <div className="p-10">
-                          <MoveableCard />
-                        </div>                        
+                            <MoveableCard />
+                        </div>
                     </p>
                 </div>
             </div>
         </AuthenticatedLayout>
     );
 }
-
