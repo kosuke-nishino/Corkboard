@@ -1,5 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
+import MoveableCard from "@/Components/MoveableCard";
 
 export default function Dashboard() {
     return (
@@ -35,7 +36,9 @@ export default function Dashboard() {
                 {/* メイン領域（仮） */}
                 <div className="mt-24">
                     <p className="text-center text-gray-600">
-                        
+                        <div className="p-10">
+                          <MoveableCard />
+                        </div>                        
                     </p>
                 </div>
             </div>
