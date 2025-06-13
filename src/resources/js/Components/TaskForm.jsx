@@ -15,7 +15,7 @@ export default function TaskForm({ onSuccess }) {
         e.preventDefault();
 
         post(route('task.store'), {
-            onSuccess: (page) => {
+            onSuccess: () => {
                 // Laravel側から返されたタスクデータを受け取る
                 const createdTask = page.props.flash.task;
                 if (onSuccess && createdTask) {
