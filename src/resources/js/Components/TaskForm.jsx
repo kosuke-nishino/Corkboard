@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-export default function TaskForm({ onSuccess }) {
+export default function TaskForm({ onSuccess, onClose }) {
     const [data, setData] = useState({
         title: '',
         content: '',
@@ -107,7 +107,14 @@ export default function TaskForm({ onSuccess }) {
                 <span className="text-sm">完了としてマーク</span>
             </div>
 
-            <div className="text-right">
+            <div className="text-right flex justify-between">
+                <button
+                    type="button"
+                    onClick={onClose}
+                    className="bg-red-300 hover:bg-red-400 text-gray-800 font-bold py-2 px-4 rounded"
+                >
+                    キャンセル
+                </button>
                 <button
                     type="submit"
                     disabled={processing}
