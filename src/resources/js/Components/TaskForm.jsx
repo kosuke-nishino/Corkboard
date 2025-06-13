@@ -14,13 +14,19 @@ export default function TaskForm({ onSuccess }) {
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        post(route('tasks.store'), {
-            onSuccess: () => {
+        post(route('task.store'), {
+            onSuccess: (page) => {
+                // Laravel側から返されたタスクデータを受け取る
+                const createdTask = page.props.flash.task;
+                if (onSuccess && createdTask) {
+                    onSuccess(createdTask);
+                }
                 reset();
-                if (onSuccess) onSuccess(); // オプションの成功時コールバック
+                if (onSuccess) onSuccess(task);
             },
         });
     };
+
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4 p-4 bg-white shadow-md rounded-md w-full max-w-md">

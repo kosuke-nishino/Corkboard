@@ -1,20 +1,25 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
-import MoveableCard from "@/Components/MoveableCard";
-import TaskForm from "@/Components/TaskForm"; // 追加
-import { useState } from 'react'; // 追加
+import TaskForm from "@/Components/TaskForm";
+import MoveableTask from "@/Components/MoveableTask"; // ← 変更点①
+import { useState } from 'react';
 
 export default function Dashboard() {
-    const [showTaskForm, setShowTaskForm] = useState(false); // モーダル状態
+    const [showTaskForm, setShowTaskForm] = useState(false);
+    const [tasks, setTasks] = useState([]); // ← 変更点② タスクリスト
+
+    const handleTaskCreated = (task) => {
+        setTasks([...tasks, task]); // ← 変更点③ タスク追加
+        setShowTaskForm(false);     // ← フォーム閉じる
+    };
 
     return (
         <AuthenticatedLayout>
             <Head title="Corkboard" />
 
-            {/* 全体をラップするコンテンツエリア */}
             <div className="relative min-h-screen bg-[url('/images/bgcork.jpg')] p-6">
 
-                {/* 左上：ゴミ箱ボタン */}
+                {/* ゴミ箱ボタン */}
                 <div className="absolute top-4 left-4">
                     <button
                         className="flex items-center justify-center w-12 h-12 bg-red-100 hover:bg-red-200 rounded-full shadow text-red-700 text-xl"
@@ -24,7 +29,7 @@ export default function Dashboard() {
                     </button>
                 </div>
 
-                {/* 右上：作成ボタンたち */}
+                {/* 作成ボタンたち */}
                 <div className="absolute top-4 right-4 flex gap-2">
                     <button
                         className="bg-blue-500 hover:bg-blue-600 text-white font-black py-2 px-4 rounded-full shadow"
@@ -40,18 +45,18 @@ export default function Dashboard() {
                     </button>
                 </div>
 
-                {/* モーダル：タスク作成フォーム */}
+                {/* タスク作成フォーム */}
                 {showTaskForm && (
-                    <TaskForm onClose={() => setShowTaskForm(false)} />
+                    <div className="absolute inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
+                        <TaskForm onSuccess={handleTaskCreated} onClose={() => setShowTaskForm(false)} />
+                    </div>
                 )}
 
-                {/* メイン領域（仮） */}
-                <div className="mt-24">
-                    <p className="text-center text-gray-600">
-                        <div className="p-10">
-                            <MoveableCard />
-                        </div>
-                    </p>
+                {/* メモ表示エリア */}
+                <div className="mt-24 relative z-0">
+                    {tasks.map((task, index) => (
+                        <MoveableTask key={index} task={task} />
+                    ))}
                 </div>
             </div>
         </AuthenticatedLayout>
