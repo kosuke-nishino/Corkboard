@@ -1,8 +1,8 @@
-import { useForm } from '@inertiajs/react';
-import React from 'react';
+import React, { useState } from 'react';
+import axios from 'axios';
 
 export default function TaskForm({ onSuccess }) {
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const [data, setData] = useState({
         title: '',
         content: '',
         start_date: '',
@@ -11,22 +11,37 @@ export default function TaskForm({ onSuccess }) {
         is_completed: false,
     });
 
-    const handleSubmit = (e) => {
+    const [processing, setProcessing] = useState(false);
+    const [errors, setErrors] = useState({});
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
+        setProcessing(true);
 
-        post(route('task.store'), {
-            onSuccess: () => {
-                // Laravel側から返されたタスクデータを受け取る
-                const createdTask = page.props.flash.task;
-                if (onSuccess && createdTask) {
-                    onSuccess(createdTask);
-                }
-                reset();
-                if (onSuccess) onSuccess(task);
-            },
-        });
+        try {
+            const res = await axios.post('/task-memos', data);
+            if (onSuccess) onSuccess(res.data); // 親コンポーネントに新規taskを渡す
+
+            // フォームリセット
+            setData({
+                title: '',
+                content: '',
+                start_date: '',
+                end_date: '',
+                color: '#fffacd',
+                is_completed: false,
+            });
+            setErrors({});
+        } catch (err) {
+            if (err.response?.status === 422) {
+                setErrors(err.response.data.errors);
+            } else {
+                console.error(err);
+            }
+        } finally {
+            setProcessing(false);
+        }
     };
-
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4 p-4 bg-white shadow-md rounded-md w-full max-w-md">
@@ -35,7 +50,7 @@ export default function TaskForm({ onSuccess }) {
                 <input
                     type="text"
                     value={data.title}
-                    onChange={(e) => setData('title', e.target.value)}
+                    onChange={(e) => setData({ ...data, title: e.target.value })}
                     className="w-full border px-3 py-2 rounded"
                 />
                 {errors.title && <p className="text-red-500 text-sm">{errors.title}</p>}
@@ -45,7 +60,7 @@ export default function TaskForm({ onSuccess }) {
                 <label className="block text-sm font-bold mb-1">内容</label>
                 <textarea
                     value={data.content}
-                    onChange={(e) => setData('content', e.target.value)}
+                    onChange={(e) => setData({ ...data, content: e.target.value })}
                     className="w-full border px-3 py-2 rounded"
                 ></textarea>
             </div>
@@ -56,7 +71,7 @@ export default function TaskForm({ onSuccess }) {
                     <input
                         type="date"
                         value={data.start_date}
-                        onChange={(e) => setData('start_date', e.target.value)}
+                        onChange={(e) => setData({ ...data, start_date: e.target.value })}
                         className="w-full border px-3 py-2 rounded"
                     />
                 </div>
@@ -66,7 +81,7 @@ export default function TaskForm({ onSuccess }) {
                     <input
                         type="date"
                         value={data.end_date}
-                        onChange={(e) => setData('end_date', e.target.value)}
+                        onChange={(e) => setData({ ...data, end_date: e.target.value })}
                         className="w-full border px-3 py-2 rounded"
                     />
                 </div>
@@ -77,7 +92,7 @@ export default function TaskForm({ onSuccess }) {
                 <input
                     type="color"
                     value={data.color}
-                    onChange={(e) => setData('color', e.target.value)}
+                    onChange={(e) => setData({ ...data, color: e.target.value })}
                     className="w-16 h-10 p-1 border rounded"
                 />
             </div>
@@ -86,7 +101,7 @@ export default function TaskForm({ onSuccess }) {
                 <input
                     type="checkbox"
                     checked={data.is_completed}
-                    onChange={(e) => setData('is_completed', e.target.checked)}
+                    onChange={(e) => setData({ ...data, is_completed: e.target.checked })}
                     className="mr-2"
                 />
                 <span className="text-sm">完了としてマーク</span>
