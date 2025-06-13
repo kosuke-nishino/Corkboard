@@ -40,7 +40,7 @@ class TaskMemoController extends Controller
 
         $task = Task::create($validated);
 
-        return redirect()->back()->with('task', $task);
+        return response()->json($task, 201);
     }
 
     public function update(Request $request, Task $task)
