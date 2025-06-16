@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
-export default function TaskForm({ onSuccess, onClose }) {
+export default function TaskForm({ onSuccess, onClose, task }) {
     const [data, setData] = useState({
         title: '',
         content: '',
@@ -14,23 +14,21 @@ export default function TaskForm({ onSuccess, onClose }) {
     const [processing, setProcessing] = useState(false);
     const [errors, setErrors] = useState({});
 
+    useEffect(() => {
+        if (task) {
+            setData({ ...task });
+        }
+    }, [task]);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setProcessing(true);
-
         try {
-            const res = await axios.post('/task-memos', data);
-            if (onSuccess) onSuccess(res.data); // 親コンポーネントに新規taskを渡す
+            const res = task
+                ? await axios.put(`/task-memos/${task.id}`, data)
+                : await axios.post('/task-memos', data);
 
-            // フォームリセット
-            setData({
-                title: '',
-                content: '',
-                start_date: '',
-                end_date: '',
-                color: '#fffacd',
-                is_completed: false,
-            });
+            onSuccess(res.data);
             setErrors({});
         } catch (err) {
             if (err.response?.status === 422) {
@@ -120,9 +118,10 @@ export default function TaskForm({ onSuccess, onClose }) {
                     disabled={processing}
                     className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
                 >
-                    作成する
+                    {task ? '更新する' : '作成する'}
                 </button>
             </div>
         </form>
     );
 }
+

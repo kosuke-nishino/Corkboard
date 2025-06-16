@@ -1,7 +1,8 @@
 import React, { useRef, useState } from "react";
 import Moveable from "react-moveable";
+import axios from "axios";
 
-export default function MoveableTask({ task }) {
+export default function MoveableTask({ task, onEdit, onDelete }) {
     const targetRef = useRef(null);
     const frameRef = useRef({
         translate: [task.x || 0, task.y || 0],
@@ -15,6 +16,15 @@ export default function MoveableTask({ task }) {
     const handleCardClick = (e) => {
         e.stopPropagation();
         setIsActive(true);
+    };
+
+    const handleDeleteClick = async () => {
+        try {
+            await axios.delete(`/task-memos/${task.id}`);
+            onDelete(task.id);
+        } catch (err) {
+            console.error("削除失敗:", err);
+        }
     };
 
     return (
@@ -57,6 +67,23 @@ export default function MoveableTask({ task }) {
                 <p className="text-xs text-gray-700">
                     {task.is_completed ? "✅ 完了" : "⏳ 未完了"}
                 </p>
+
+                {isActive && (
+                    <div className="mt-2 flex gap-2 text-xs">
+                        <button
+                            onClick={() => onEdit(task)}
+                            className="text-blue-600 underline"
+                        >
+                            編集
+                        </button>
+                        <button
+                            onClick={handleDeleteClick}
+                            className="text-red-600 underline"
+                        >
+                            削除
+                        </button>
+                    </div>
+                )}
             </div>
 
             <Moveable

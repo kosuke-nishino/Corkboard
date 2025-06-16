@@ -1,24 +1,38 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
 import TaskForm from "@/Components/TaskForm";
-import MoveableTask from "@/Components/MoveableTask"; // ← 変更点①
+import MoveableTask from "@/Components/MoveableTask";
 import { useState } from 'react';
 
-export default function Dashboard() {
+export default function Dashboard({ auth, tasks: initialTasks }) {
     const [showTaskForm, setShowTaskForm] = useState(false);
-    const [tasks, setTasks] = useState([]); // ← 変更点② タスクリスト
+    const [editingTask, setEditingTask] = useState(null);
+    const [tasks, setTasks] = useState(initialTasks || []);
 
-    const handleTaskCreated = (task) => {
-        setTasks([...tasks, task]); // ← 変更点③ タスク追加
-        setShowTaskForm(false);     // ← フォーム閉じる
+    const handleTaskCreated = (newTask) => {
+        if (editingTask) {
+            setTasks(tasks.map(t => t.id === newTask.id ? newTask : t));
+        } else {
+            setTasks([...tasks, newTask]);
+        }
+        setEditingTask(null);
+        setShowTaskForm(false);
+    };
+
+    const handleEdit = (task) => {
+        setEditingTask(task);
+        setShowTaskForm(true);
+    };
+
+    const handleDelete = (id) => {
+        setTasks(tasks.filter(task => task.id !== id));
     };
 
     return (
-        <AuthenticatedLayout>
+        <AuthenticatedLayout user={auth.user}>
             <Head title="Corkboard" />
 
             <div className="relative min-h-screen bg-[url('/images/bgcork.jpg')] p-6">
-
                 {/* ゴミ箱ボタン */}
                 <div className="absolute top-4 left-4">
                     <button
@@ -33,7 +47,10 @@ export default function Dashboard() {
                 <div className="absolute top-4 right-4 flex gap-2">
                     <button
                         className="bg-blue-500 hover:bg-blue-600 text-white font-black py-2 px-4 rounded-full shadow"
-                        onClick={() => setShowTaskForm(true)}
+                        onClick={() => {
+                            setEditingTask(null);
+                            setShowTaskForm(true);
+                        }}
                     >
                         タスク作成
                     </button>
@@ -45,17 +62,29 @@ export default function Dashboard() {
                     </button>
                 </div>
 
-                {/* タスク作成フォーム */}
+                {/* タスクフォーム */}
                 {showTaskForm && (
                     <div className="absolute inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
-                        <TaskForm onSuccess={handleTaskCreated} onClose={() => setShowTaskForm(false)} />
+                        <TaskForm
+                            onSuccess={handleTaskCreated}
+                            onClose={() => {
+                                setShowTaskForm(false);
+                                setEditingTask(null);
+                            }}
+                            task={editingTask}
+                        />
                     </div>
                 )}
 
-                {/* メモ表示エリア */}
+                {/* タスクカード */}
                 <div className="mt-24 relative z-0">
-                    {tasks.map((task, index) => (
-                        <MoveableTask key={index} task={task} />
+                    {tasks.map((task) => (
+                        <MoveableTask
+                            key={task.id}
+                            task={task}
+                            onEdit={handleEdit}
+                            onDelete={handleDelete}
+                        />
                     ))}
                 </div>
             </div>
