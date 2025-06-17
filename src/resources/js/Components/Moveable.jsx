@@ -51,6 +51,24 @@ export default function MoveableWrapper({ task, updateUrl = '/task-memos', child
         console.error("保存エラー:", err);
     }
 };
+    useEffect(() => {
+    if (targetRef.current) {
+        // taskの情報からtransformやサイズを更新
+        const { x = 0, y = 0, width = 200, height = 180, rotation = 0 } = task;
+
+        // refに反映
+        frameRef.current.translate = [x, y];
+        frameRef.current.rotate = rotation;
+
+        targetRef.current.style.transform = `
+            translate(${x}px, ${y}px)
+            rotate(${rotation}deg)
+            scale(${frameRef.current.scale[0]}, ${frameRef.current.scale[1]})
+        `;
+        targetRef.current.style.width = `${width}px`;
+        targetRef.current.style.height = `${height}px`;
+    }
+}, [task]);
 
 
     return (
