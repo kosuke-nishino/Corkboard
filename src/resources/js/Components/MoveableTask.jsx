@@ -2,7 +2,7 @@
 import React from 'react';
 import Moveable from './Moveable';
 
-export default function MoveableTask({ task }) {
+export default function MoveableTask({ task, onEdit }) {
     return (
         <Moveable task={task} updateUrl="/task-memos">
             {({ targetRef, frameRef, isActive, onClick }) => (
@@ -30,6 +30,19 @@ export default function MoveableTask({ task }) {
                         fontSize: "14px",
                     }}
                 >
+                    {/* 編集ボタン（アクティブ時のみ表示） */}
+                    {isActive && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation(); // タスククリック扱いを防ぐ
+                                if (onEdit) onEdit(task); // モーダル開く関数などを渡す
+                            }}
+                            className="absolute top-1 right-1 bg-blue-500 text-white text-xs px-2 py-1 rounded hover:bg-blue-600 shadow"
+                        >
+                            ✎ 編集
+                        </button>
+                    )}
+
                     <strong className="block mb-1">{task.title}</strong>
                     <p className="mb-1">{task.content}</p>
                     {task.start_date && (

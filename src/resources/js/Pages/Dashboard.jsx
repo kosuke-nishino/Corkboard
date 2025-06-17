@@ -1,16 +1,26 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
 import TaskForm from "@/Components/TaskForm";
-import MoveableTask from "@/Components/MoveableTask"; // ← 変更点①
+import EditTaskForm from "@/Components/EditTaskForm"; // ← 追加
+import MoveableTask from "@/Components/MoveableTask";
+import Modal from "@/Components/Modal"; // ← 追加
 import { useState } from 'react';
 
 export default function Dashboard() {
     const [showTaskForm, setShowTaskForm] = useState(false);
-    const [tasks, setTasks] = useState([]); // ← 変更点② タスクリスト
+    const [tasks, setTasks] = useState([]);
+    const [editingTask, setEditingTask] = useState(null); // ← 編集対象タスク
 
     const handleTaskCreated = (task) => {
-        setTasks([...tasks, task]); // ← 変更点③ タスク追加
-        setShowTaskForm(false);     // ← フォーム閉じる
+        setTasks([...tasks, task]);
+        setShowTaskForm(false);
+    };
+
+    const handleTaskUpdated = (updatedTask) => {
+        setTasks((prevTasks) =>
+            prevTasks.map((t) => (t.id === updatedTask.id ? updatedTask : t))
+        );
+        setEditingTask(null);
     };
 
     return (
@@ -52,10 +62,25 @@ export default function Dashboard() {
                     </div>
                 )}
 
+                {/* 編集モーダル */}
+                <Modal show={!!editingTask} onClose={() => setEditingTask(null)}>
+                    {editingTask && (
+                        <EditTaskForm
+                            task={editingTask}
+                            onSuccess={handleTaskUpdated}
+                            onClose={() => setEditingTask(null)}
+                        />
+                    )}
+                </Modal>
+
                 {/* メモ表示エリア */}
                 <div className="mt-24 relative z-0">
                     {tasks.map((task, index) => (
-                        <MoveableTask key={index} task={task} />
+                        <MoveableTask
+                            key={index}
+                            task={task}
+                            onEdit={(t) => setEditingTask(t)} // ← 編集ボタンが押されたらset
+                        />
                     ))}
                 </div>
             </div>
