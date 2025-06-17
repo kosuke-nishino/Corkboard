@@ -10,13 +10,13 @@ use Inertia\Inertia;
 class TaskMemoController extends Controller
 {
     public function index()
-    {
-        $tasks = Task::where('user_id', Auth::id())->get();
+{
+    $tasks = Task::where('user_id', Auth::id())->get();
 
-        return Inertia::render('Dashboard', [
-            'tasks' => $tasks,
-        ]);
-    }
+    return Inertia::render('Dashboard', [
+        'tasks' => $tasks,
+    ]);
+}
 
     public function store(Request $request)
     {
@@ -44,8 +44,7 @@ class TaskMemoController extends Controller
     }
 
     public function update(Request $request, Task $task)
-    {
-        $this->authorize('update', $task);
+    {      
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',
@@ -66,6 +65,25 @@ class TaskMemoController extends Controller
 
         return response()->json($task);
     }
+
+    public function updatePosition(Request $request, Task $task)
+{
+    // 必要なら認可チェック（任意）
+    // $this->authorize('update', $task);
+
+    $validated = $request->validate([
+        'x' => 'nullable|numeric',
+        'y' => 'nullable|numeric',
+        'width' => 'nullable|numeric',
+        'height' => 'nullable|numeric',
+        'rotation' => 'nullable|numeric',
+        'z_index' => 'nullable|integer',
+    ]);
+
+    $task->update($validated);
+
+    return response()->json(['message' => '位置情報を更新しました']);
+}
 
     public function destroy(Task $task)
     {

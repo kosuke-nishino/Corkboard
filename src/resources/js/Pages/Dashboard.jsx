@@ -6,10 +6,12 @@ import MoveableTask from "@/Components/MoveableTask";
 import Modal from "@/Components/Modal"; // ← 追加
 import { useState } from 'react';
 import axios from 'axios';
+import { usePage } from '@inertiajs/react';
 
 export default function Dashboard() {
+    const { props } = usePage();    
     const [showTaskForm, setShowTaskForm] = useState(false);
-    const [tasks, setTasks] = useState([]);
+    const [tasks, setTasks] = useState(props.tasks || []);
     const [editingTask, setEditingTask] = useState(null); // ← 編集対象タスク
 
     const handleTaskCreated = (task) => {

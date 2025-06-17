@@ -32,19 +32,26 @@ export default function MoveableWrapper({ task, updateUrl = '/task-memos', child
     };
 
     const savePosition = async () => {
-        try {
-            await axios.put(`${updateUrl}/${task.id}`, {
-                x: frameRef.current.translate[0],
-                y: frameRef.current.translate[1],
-                width: task.width,
-                height: task.height,
-                rotation: frameRef.current.rotate,
-                z_index: task.z_index,
-            });
-        } catch (err) {
-            console.error("保存エラー:", err);
-        }
+    const rect = targetRef.current?.getBoundingClientRect();
+
+    const payload = {
+        x: Number(frameRef.current.translate?.[0]) ?? 0,
+        y: Number(frameRef.current.translate?.[1]) ?? 0,
+        width: rect?.width ?? 0,
+        height: rect?.height ?? 0,
+        rotation: Number(frameRef.current.rotate) ?? 0,
+        z_index: Number(task.z_index) ?? 0,
     };
+
+    console.log("送信データ（位置更新）:", payload);
+
+    try {
+        await axios.put(`${updateUrl}/${task.id}/position`, payload);
+    } catch (err) {
+        console.error("保存エラー:", err);
+    }
+};
+
 
     return (
         <div style={{ position: "relative", width: "100%", height: "100vh" }}>
