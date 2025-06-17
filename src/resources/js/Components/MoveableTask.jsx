@@ -2,7 +2,7 @@
 import React from 'react';
 import Moveable from './Moveable';
 
-export default function MoveableTask({ task, onEdit }) {
+export default function MoveableTask({ task, onEdit, onDelete }) {
     return (
         <Moveable task={task} updateUrl="/task-memos">
             {({ targetRef, frameRef, isActive, onClick }) => (
@@ -32,15 +32,28 @@ export default function MoveableTask({ task, onEdit }) {
                 >
                     {/* 編集ボタン（アクティブ時のみ表示） */}
                     {isActive && (
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation(); // タスククリック扱いを防ぐ
-                                if (onEdit) onEdit(task); // モーダル開く関数などを渡す
-                            }}
-                            className="absolute top-1 right-1 bg-blue-500 text-white text-xs px-2 py-1 rounded hover:bg-blue-600 shadow"
-                        >
-                            ✎ 編集
-                        </button>
+                        <div className="absolute top-1 right-1 flex gap-1">
+                            <button
+                             onClick={(e) => {
+                             e.stopPropagation();
+                             onEdit(task);
+                             }}
+                             className="bg-blue-500 text-white text-xs px-2 py-1 rounded hover:bg-blue-600 shadow"
+                            >
+                                      ✎
+                            </button>
+                            <button
+                             onClick={(e) => {
+                             e.stopPropagation();
+                             if (confirm('このタスクを削除しますか？')) {
+                                  onDelete(task); // 親に削除依頼
+                             }
+                             }}
+                             className="bg-red-500 text-white text-xs px-2 py-1 rounded hover:bg-red-600 shadow"
+                            >
+                                    🗑
+                            </button>
+                        </div>                        
                     )}
 
                     <strong className="block mb-1">{task.title}</strong>

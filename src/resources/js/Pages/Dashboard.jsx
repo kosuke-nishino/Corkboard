@@ -5,6 +5,7 @@ import EditTaskForm from "@/Components/EditTaskForm"; // ← 追加
 import MoveableTask from "@/Components/MoveableTask";
 import Modal from "@/Components/Modal"; // ← 追加
 import { useState } from 'react';
+import axios from 'axios';
 
 export default function Dashboard() {
     const [showTaskForm, setShowTaskForm] = useState(false);
@@ -22,6 +23,16 @@ export default function Dashboard() {
         );
         setEditingTask(null);
     };
+
+    const handleTaskDeleted = async (task) => {
+    try {
+        await axios.delete(`/task-memos/${task.id}`);
+        setTasks((prev) => prev.filter((t) => t.id !== task.id));
+    } catch (error) {
+        console.error('削除エラー:', error);
+        alert('削除に失敗しました');
+    }
+};
 
     return (
         <AuthenticatedLayout>
@@ -80,6 +91,7 @@ export default function Dashboard() {
                             key={index}
                             task={task}
                             onEdit={(t) => setEditingTask(t)} // ← 編集ボタンが押されたらset
+                            onDelete={handleTaskDeleted}
                         />
                     ))}
                 </div>

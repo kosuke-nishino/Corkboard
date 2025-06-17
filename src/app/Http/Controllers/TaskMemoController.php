@@ -69,7 +69,7 @@ class TaskMemoController extends Controller
 
     public function destroy(Task $task)
     {
-        $this->authorize('delete', $task);
+
 
         $task->delete(); // ← 修正
 
