@@ -90,7 +90,7 @@ export default function Dashboard() {
                 <div className="mt-24 relative z-0">
                     {tasks.map((task, index) => (
                         <MoveableTask
-                            key={index}
+                            key={task.id} 
                             task={task}
                             onEdit={(t) => setEditingTask(t)} // ← 編集ボタンが押されたらset
                             onDelete={handleTaskDeleted}

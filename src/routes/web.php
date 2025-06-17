@@ -19,7 +19,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/task-memos', [TaskMemoController::class, 'index'])->name('task.index');
     Route::post('/task-memos', [TaskMemoController::class, 'store'])->name('task.store');
     Route::put('/task-memos/{task}/position', [TaskMemoController::class, 'updatePosition'])->name('task.updatePosition');
-    Route::put('/task-memos/{id}', [TaskMemoController::class, 'update'])->name('task.update');
+    Route::put('/task-memos/{task}', [TaskMemoController::class, 'update'])->name('task.update');
     Route::delete('/task-memos/{task}', [TaskMemoController::class, 'destroy'])->name('task.destroy');
 });
 
