@@ -15,7 +15,7 @@ export default function MoveableTask({ task, onEdit, onDelete }) {
                         background: task.color || "#ffd",
                         border: isActive ? "2px solid blue" : "1px solid #ccc",
                         transform: `
-                            translate(${frameRef.current.translate[0]}px, ${frameRef.current.translate[1]}px)
+                            translate(${frameRef.current.translate[0] ?? task.x}px, ${frameRef.current.translate[1] ?? task.y}px)
                             rotate(${frameRef.current.rotate}deg)
                             scale(${frameRef.current.scale[0]}, ${frameRef.current.scale[1]})
                         `,
@@ -30,30 +30,29 @@ export default function MoveableTask({ task, onEdit, onDelete }) {
                         fontSize: "14px",
                     }}
                 >
-                    {/* 編集ボタン（アクティブ時のみ表示） */}
                     {isActive && (
                         <div className="absolute top-1 right-1 flex gap-1">
                             <button
-                             onClick={(e) => {
-                             e.stopPropagation();
-                             onEdit(task);
-                             }}
-                             className="bg-blue-500 text-white text-xs px-2 py-1 rounded hover:bg-blue-600 shadow"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onEdit(task);
+                                }}
+                                className="bg-blue-500 text-white text-xs px-2 py-1 rounded hover:bg-blue-600 shadow"
                             >
-                                      ✎
+                                ✎
                             </button>
                             <button
-                             onClick={(e) => {
-                             e.stopPropagation();
-                             if (confirm('このタスクを削除しますか？')) {
-                                  onDelete(task); // 親に削除依頼
-                             }
-                             }}
-                             className="bg-red-500 text-white text-xs px-2 py-1 rounded hover:bg-red-600 shadow"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (confirm('このタスクを削除しますか？')) {
+                                        onDelete(task);
+                                    }
+                                }}
+                                className="bg-red-500 text-white text-xs px-2 py-1 rounded hover:bg-red-600 shadow"
                             >
-                                    🗑
+                                🗑
                             </button>
-                        </div>                        
+                        </div>
                     )}
 
                     <strong className="block mb-1">{task.title}</strong>

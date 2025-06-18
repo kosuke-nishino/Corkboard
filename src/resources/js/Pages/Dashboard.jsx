@@ -1,21 +1,39 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import TaskForm from "@/Components/TaskForm";
-import EditTaskForm from "@/Components/EditTaskForm"; // ← 追加
+import EditTaskForm from "@/Components/EditTaskForm";
 import MoveableTask from "@/Components/MoveableTask";
-import Modal from "@/Components/Modal"; // ← 追加
-import { useState } from 'react';
+import Modal from "@/Components/Modal";
+import { useState, useRef } from 'react';
 import axios from 'axios';
-import { usePage } from '@inertiajs/react';
 
 export default function Dashboard() {
-    const { props } = usePage();    
+    const { props } = usePage();
     const [showTaskForm, setShowTaskForm] = useState(false);
     const [tasks, setTasks] = useState(props.tasks || []);
-    const [editingTask, setEditingTask] = useState(null); // ← 編集対象タスク
+    const [editingTask, setEditingTask] = useState(null);
+    const formContainerRef = useRef(null); // ← タスクフォームの位置参照用
 
     const handleTaskCreated = (task) => {
-        setTasks([...tasks, task]);
+        // タスクフォームの位置から新規タスクの初期位置を取得
+        const formRect = formContainerRef.current?.getBoundingClientRect();
+        const offsetX = formRect?.left || 100;
+        const offsetY = formRect?.top || 100;
+
+        // 新規タスクに初期位置情報を追加
+        const newTask = {
+            ...task,
+            width: 200,
+            height: 180,
+            z_index: 10,
+            translateX: offsetX,
+            translateY: offsetY,
+            rotate: 0,
+            scaleX: 1,
+            scaleY: 1
+        };
+
+        setTasks([...tasks, newTask]);
         setShowTaskForm(false);
     };
 
@@ -27,21 +45,20 @@ export default function Dashboard() {
     };
 
     const handleTaskDeleted = async (task) => {
-    try {
-        await axios.delete(`/task-memos/${task.id}`);
-        setTasks((prev) => prev.filter((t) => t.id !== task.id));
-    } catch (error) {
-        console.error('削除エラー:', error);
-        alert('削除に失敗しました');
-    }
-};
+        try {
+            await axios.delete(`/task-memos/${task.id}`);
+            setTasks((prev) => prev.filter((t) => t.id !== task.id));
+        } catch (error) {
+            console.error('削除エラー:', error);
+            alert('削除に失敗しました');
+        }
+    };
 
     return (
         <AuthenticatedLayout>
             <Head title="Corkboard" />
 
-            <div className="relative min-h-screen bg-[url('/images/bgcork.jpg')] p-6">
-
+            <div className="relative min-h-screen bg-[url('/images/bgcork.jpg')] p-6 overflow-hidden">
                 {/* ゴミ箱ボタン */}
                 <div className="absolute top-4 left-4">
                     <button
@@ -52,7 +69,7 @@ export default function Dashboard() {
                     </button>
                 </div>
 
-                {/* 作成ボタンたち */}
+                {/* 作成ボタン群 */}
                 <div className="absolute top-4 right-4 flex gap-2">
                     <button
                         className="bg-blue-500 hover:bg-blue-600 text-white font-black py-2 px-4 rounded-full shadow"
@@ -70,8 +87,14 @@ export default function Dashboard() {
 
                 {/* タスク作成フォーム */}
                 {showTaskForm && (
-                    <div className="absolute inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
-                        <TaskForm onSuccess={handleTaskCreated} onClose={() => setShowTaskForm(false)} />
+                    <div
+                        ref={formContainerRef}
+                        className="absolute top-20 left-1/2 transform -translate-x-1/2 z-50"
+                    >
+                        <TaskForm
+                            onSuccess={handleTaskCreated}
+                            onClose={() => setShowTaskForm(false)}
+                        />
                     </div>
                 )}
 
@@ -86,13 +109,13 @@ export default function Dashboard() {
                     )}
                 </Modal>
 
-                {/* メモ表示エリア */}
+                {/* タスク表示エリア */}
                 <div className="mt-24 relative z-0">
-                    {tasks.map((task, index) => (
+                    {tasks.map((task) => (
                         <MoveableTask
-                            key={task.id} 
+                            key={task.id}
                             task={task}
-                            onEdit={(t) => setEditingTask(t)} // ← 編集ボタンが押されたらset
+                            onEdit={(t) => setEditingTask(t)}
                             onDelete={handleTaskDeleted}
                         />
                     ))}

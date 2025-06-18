@@ -1,3 +1,4 @@
+// components/TaskForm.jsx
 import React, { useState } from 'react';
 import axios from 'axios';
 
@@ -9,6 +10,8 @@ export default function TaskForm({ onSuccess, onClose }) {
         end_date: '',
         color: '#fffacd',
         is_completed: false,
+        x: 0,  // ← 初期表示位置X（中央表示したいなら動的計算も可）
+        y: 100, // ← ヘッダー下
     });
 
     const [processing, setProcessing] = useState(false);
@@ -20,9 +23,8 @@ export default function TaskForm({ onSuccess, onClose }) {
 
         try {
             const res = await axios.post('/task-memos', data);
-            if (onSuccess) onSuccess(res.data); // 親コンポーネントに新規taskを渡す
+            if (onSuccess) onSuccess(res.data);
 
-            // フォームリセット
             setData({
                 title: '',
                 content: '',
@@ -30,6 +32,8 @@ export default function TaskForm({ onSuccess, onClose }) {
                 end_date: '',
                 color: '#fffacd',
                 is_completed: false,
+                x: 0,
+                y: 100,
             });
             setErrors({});
         } catch (err) {
