@@ -2,7 +2,8 @@ import React, { useRef, useState, useEffect, useCallback } from "react";
 import Moveable from "react-moveable";
 import axios from "axios";
 
-export default function MoveableWrapper({ task, updateUrl = '/task-memos', children, onPositionUpdate }) {
+export default function MoveableWrapper({ task, stickyNote, updateUrl = '/task-memos', children, onPositionUpdate }) {
+    const item = task || stickyNote;
     const targetRef = useRef(null);
     const frameRef = useRef({
         translate: [0, 0],
@@ -11,9 +12,9 @@ export default function MoveableWrapper({ task, updateUrl = '/task-memos', child
     });
 
     const [isActive, setIsActive] = useState(false);
-
-    // デバウンス用のタイマー
     const saveTimeoutRef = useRef(null);
+    const baseSize = useRef(null);
+    const initialized = useRef(false);
 
     const handleClickOutside = useCallback((e) => {
         if (targetRef.current && !targetRef.current.contains(e.target)) {
@@ -33,145 +34,122 @@ export default function MoveableWrapper({ task, updateUrl = '/task-memos', child
         setIsActive(true);
     };
 
-    // デバウンス付きの保存関数
     const debouncedSave = useCallback(() => {
         if (saveTimeoutRef.current) {
             clearTimeout(saveTimeoutRef.current);
         }
         
         saveTimeoutRef.current = setTimeout(async () => {
-            const rect = targetRef.current?.getBoundingClientRect();
+            const currentWidth = parseFloat(targetRef.current.style.width) || baseSize.current?.width || (task ? 200 : 150);
+            const currentHeight = parseFloat(targetRef.current.style.height) || baseSize.current?.height || (task ? 180 : 100);
 
             const payload = {
                 x: Math.round(frameRef.current.translate[0]),
                 y: Math.round(frameRef.current.translate[1]),
-                width: Math.round(rect?.width ?? task.width ?? 200),
-                height: Math.round(rect?.height ?? task.height ?? 180),
+                width: Math.round(currentWidth),
+                height: Math.round(currentHeight),
                 rotation: Math.round(frameRef.current.rotate),
-                z_index: task.z_index ?? 0,
+                z_index: item.z_index ?? 0,
             };
 
-            console.log("送信データ（位置更新）:", payload);
+            console.log("FIXED SAVE:", payload);
 
             try {
-                const response = await axios.put(`${updateUrl}/${task.id}/position`, payload);
-                console.log("位置保存成功:", payload);
+                const response = await axios.put(`${updateUrl}/${item.id}/position`, payload);
+                console.log("SAVE SUCCESS:", payload);
                 
-                if (onPositionUpdate && response.data.task) {
-                    onPositionUpdate(response.data.task);
+                if (onPositionUpdate && (response.data.task || response.data.stickyNote)) {
+                    onPositionUpdate(response.data.task || response.data.stickyNote);
                 }
             } catch (err) {
-                console.error("位置保存エラー:", err);
-                // エラー時はローカルストレージに保存
-                localStorage.setItem(`task_position_${task.id}`, JSON.stringify(payload));
+                console.error("SAVE ERROR:", err);
             }
-        }, 300); // 300ms のデバウンス
-    }, [task.id, task.width, task.height, task.z_index, updateUrl, onPositionUpdate]);
+        }, 300);
+    }, [item?.id, updateUrl, onPositionUpdate, task]);
 
-    // タスクデータが変更された時の初期化
     useEffect(() => {
-        if (targetRef.current && task) {
-            // ローカルストレージから復旧を試行
-            const savedPosition = localStorage.getItem(`task_position_${task.id}`);
-            let position = null;
+        console.log("INIT CHECK:", {
+            itemId: item?.id,
+            targetExists: !!targetRef.current,
+            alreadyInitialized: initialized.current
+        });
+        
+        if (targetRef.current && item && !initialized.current) {
+            initialized.current = true;
             
-            if (savedPosition) {
-                try {
-                    position = JSON.parse(savedPosition);
-                    console.log("ローカルストレージから位置復旧:", position);
-                } catch (e) {
-                    console.warn("ローカルストレージの位置データが無効:", e);
-                }
+            if (!baseSize.current) {
+                const defaultWidth = task ? 200 : 150;
+                const defaultHeight = task ? 180 : 100;
+                baseSize.current = {
+                    width: item.width ?? defaultWidth,
+                    height: item.height ?? defaultHeight
+                };
+                console.log("BASE SIZE SET:", baseSize.current);
             }
 
-            const x = position?.x ?? task.x ?? 0;
-            const y = position?.y ?? task.y ?? 0;
-            const rotation = position?.rotation ?? task.rotation ?? 0;
-            const width = position?.width ?? task.width ?? 200;
-            const height = position?.height ?? task.height ?? 180;
+            const x = item.x ?? 0;
+            const y = item.y ?? 0;
+            const rotation = item.rotation ?? 0;
+            const width = item.width ?? baseSize.current.width;
+            const height = item.height ?? baseSize.current.height;
 
-            // frameRef を更新
             frameRef.current.translate = [x, y];
             frameRef.current.rotate = rotation;
             frameRef.current.scale = [1, 1];
 
-            // DOM要素に直接適用
-            targetRef.current.style.transform = `
-                translate(${x}px, ${y}px)
-                rotate(${rotation}deg)
-                scale(1, 1)
-            `;
+            targetRef.current.style.transform = `translate(${x}px, ${y}px) rotate(${rotation}deg) scale(1, 1)`;
             targetRef.current.style.width = `${width}px`;
             targetRef.current.style.height = `${height}px`;
 
-            console.log("タスク初期位置設定:", { x, y, rotation, width, height });
-
-            // 保存された位置がある場合は、サーバーに同期
-            if (position) {
-                setTimeout(() => {
-                    debouncedSave();
-                    localStorage.removeItem(`task_position_${task.id}`);
-                }, 1000);
-            }
+            console.log("INIT COMPLETE:", { itemId: item.id, x, y, rotation, width, height });
         }
-    }, [task.id, task.x, task.y, task.rotation, task.width, task.height, debouncedSave]);
-
-    // クリーンアップ
-    useEffect(() => {
-        return () => {
-            if (saveTimeoutRef.current) {
-                clearTimeout(saveTimeoutRef.current);
-            }
-        };
-    }, []);
+    }, [item?.id]);
 
     return (
-    <div className="absolute top-0 left-0 w-full h-full">
-        {children({
-            targetRef,
-            frameRef,
-            isActive,
-            onClick: handleClick,
-        })}
+        <div className="absolute top-0 left-0 w-full h-full">
+            {children({
+                targetRef,
+                frameRef,
+                isActive,
+                onClick: handleClick,
+            })}
 
-        <Moveable
-            target={isActive ? targetRef.current : null}
-            draggable={isActive}
-            scalable={isActive}
-            rotatable={isActive}
-            origin={false}
-            onDrag={({ beforeTranslate }) => {
-                frameRef.current.translate = beforeTranslate;
-                targetRef.current.style.transform = `
-                    translate(${beforeTranslate[0]}px, ${beforeTranslate[1]}px)
-                    rotate(${frameRef.current.rotate}deg)
-                    scale(${frameRef.current.scale[0]}, ${frameRef.current.scale[1]})
-                `;
-            }}
-            onDragEnd={debouncedSave}
-            onScale={({ scale, drag }) => {
-                frameRef.current.scale = scale;
-                frameRef.current.translate = drag.beforeTranslate;
-                targetRef.current.style.transform = `
-                    translate(${drag.beforeTranslate[0]}px, ${drag.beforeTranslate[1]}px)
-                    rotate(${frameRef.current.rotate}deg)
-                    scale(${scale[0]}, ${scale[1]})
-                `;
-            }}
-            onScaleEnd={debouncedSave}
-            onRotate={({ beforeRotate, drag }) => {
-                frameRef.current.rotate = beforeRotate;
-                frameRef.current.translate = drag.beforeTranslate;
-                targetRef.current.style.transform = `
-                    translate(${drag.beforeTranslate[0]}px, ${drag.beforeTranslate[1]}px)
-                    rotate(${beforeRotate}deg)
-                    scale(${frameRef.current.scale[0]}, ${frameRef.current.scale[1]})
-                `;
-            }}
-            onRotateEnd={debouncedSave}
-        />
-    </div>
-);
-
-    
+            <Moveable
+                target={isActive ? targetRef.current : null}
+                draggable={isActive}
+                scalable={isActive}
+                rotatable={isActive}
+                origin={false}
+                onDrag={({ beforeTranslate }) => {
+                    frameRef.current.translate = beforeTranslate;
+                    targetRef.current.style.transform = `translate(${beforeTranslate[0]}px, ${beforeTranslate[1]}px) rotate(${frameRef.current.rotate}deg) scale(1, 1)`;
+                }}
+                onDragEnd={debouncedSave}
+                onScale={({ scale, drag }) => {
+                    frameRef.current.scale = scale;
+                    frameRef.current.translate = drag.beforeTranslate;
+                    
+                    if (baseSize.current) {
+                        const newWidth = baseSize.current.width * scale[0];
+                        const newHeight = baseSize.current.height * scale[1];
+                        
+                        targetRef.current.style.width = `${newWidth}px`;
+                        targetRef.current.style.height = `${newHeight}px`;
+                        targetRef.current.style.transform = `translate(${drag.beforeTranslate[0]}px, ${drag.beforeTranslate[1]}px) rotate(${frameRef.current.rotate}deg) scale(1, 1)`;
+                        
+                        console.log("SCALE APPLIED:", { scale, newWidth, newHeight });
+                    }
+                    
+                    frameRef.current.scale = [1, 1];
+                }}
+                onScaleEnd={debouncedSave}
+                onRotate={({ beforeRotate, drag }) => {
+                    frameRef.current.rotate = beforeRotate;
+                    frameRef.current.translate = drag.beforeTranslate;
+                    targetRef.current.style.transform = `translate(${drag.beforeTranslate[0]}px, ${drag.beforeTranslate[1]}px) rotate(${beforeRotate}deg) scale(1, 1)`;
+                }}
+                onRotateEnd={debouncedSave}
+            />
+        </div>
+    );
 }

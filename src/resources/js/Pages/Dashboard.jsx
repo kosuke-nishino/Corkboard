@@ -3,22 +3,55 @@ import { Head, usePage } from '@inertiajs/react';
 import TaskForm from "@/Components/TaskForm";
 import EditTaskForm from "@/Components/EditTaskForm";
 import MoveableTask from "@/Components/MoveableTask";
+import StickyNoteForm from "@/Components/StickyNoteForm";
+import EditStickyNoteForm from "@/Components/EditStickyNoteForm";
+import MoveableStickyNote from "@/Components/MoveableStickyNote";
 import Modal from "@/Components/Modal";
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 
 export default function Dashboard() {
     const { props } = usePage();
     const [showTaskForm, setShowTaskForm] = useState(false);
+    const [showStickyNoteForm, setShowStickyNoteForm] = useState(false);
     const [tasks, setTasks] = useState(props.tasks || []);
+    const [stickyNotes, setStickyNotes] = useState(props.stickyNotes || []);
     const [editingTask, setEditingTask] = useState(null);
+    const [editingStickyNote, setEditingStickyNote] = useState(null);
     const formContainerRef = useRef(null); // ← タスクフォームの位置参照用
 
+    // デバッグ: 初期データの確認
+    useEffect(() => {
+        console.log('🔍 Dashboard初期化 - サーバーから受信したタスクデータ:', props.tasks?.map(t => ({
+            id: t.id,
+            title: t.title,
+            width: t.width,
+            height: t.height,
+            x: t.x,
+            y: t.y,
+            widthType: typeof t.width,
+            heightType: typeof t.height
+        })));
+    }, [props.tasks]);
+
     const handleTaskCreated = async (task) => {
-        // タスクフォームの位置から新規タスクの初期位置を取得
+        // デバッグ: フォームの位置情報を確認
         const formRect = formContainerRef.current?.getBoundingClientRect();
-        const offsetX = Math.max(100, (formRect?.left || 100) - 100);
-        const offsetY = Math.max(100, (formRect?.top || 100) - 100);
+        console.log("🔍 FormRect debug:", {
+            formRect,
+            left: formRect?.left,
+            top: formRect?.top,
+            width: formRect?.width,
+            height: formRect?.height,
+            showTaskForm,
+            formContainerExists: !!formContainerRef.current
+        });
+        
+        // 一時的に固定位置でテスト
+        const offsetX = 200; // 固定値でテスト
+        const offsetY = 200; // 固定値でテスト
+        
+        console.log("🎯 Using fixed position:", { offsetX, offsetY });
 
         // 新規タスクの初期位置をDBに保存
         try {
@@ -79,6 +112,71 @@ export default function Dashboard() {
         }
     };
 
+    const handleStickyNoteCreated = async (stickyNote) => {
+        // 付箋フォームの位置から新規付箋の初期位置を取得
+        const formRect = formContainerRef.current?.getBoundingClientRect();
+        const offsetX = Math.max(100, (formRect?.left || 100) - 50);
+        const offsetY = Math.max(100, (formRect?.top || 100) - 50);
+
+        // 新規付箋の初期位置をDBに保存
+        try {
+            const response = await axios.put(`/sticky-notes/${stickyNote.id}/position`, {
+                x: offsetX,
+                y: offsetY,
+                width: 150,  // 横長の付箋
+                height: 100, // タスクより小さく
+                rotation: 0,
+                z_index: 5,
+            });
+            
+            // 位置情報を含む付箋オブジェクトを作成
+            const newStickyNote = {
+                ...stickyNote,
+                x: offsetX,
+                y: offsetY,
+                width: 150,
+                height: 100,
+                rotation: 0,
+                z_index: 5,
+            };
+            
+            setStickyNotes([...stickyNotes, newStickyNote]);
+            console.log("新規付箋作成完了:", newStickyNote);
+        } catch (error) {
+            console.error('初期位置保存エラー:', error);
+            // エラーでも表示はする
+            const newStickyNote = {
+                ...stickyNote,
+                x: offsetX,
+                y: offsetY,
+                width: 150,
+                height: 100,
+                rotation: 0,
+                z_index: 5,
+            };
+            setStickyNotes([...stickyNotes, newStickyNote]);
+        }
+
+        setShowStickyNoteForm(false);
+    };
+
+    const handleStickyNoteUpdated = (updatedStickyNote) => {
+        setStickyNotes((prevStickyNotes) =>
+            prevStickyNotes.map((sn) => (sn.id === updatedStickyNote.id ? updatedStickyNote : sn))
+        );
+        setEditingStickyNote(null);
+    };
+
+    const handleStickyNoteDeleted = async (stickyNote) => {
+        try {
+            await axios.delete(`/sticky-notes/${stickyNote.id}`);
+            setStickyNotes((prev) => prev.filter((sn) => sn.id !== stickyNote.id));
+        } catch (error) {
+            console.error('削除エラー:', error);
+            alert('削除に失敗しました');
+        }
+    };
+
     return (
         <AuthenticatedLayout>
             <Head title="Corkboard" />
@@ -102,7 +200,10 @@ export default function Dashboard() {
                     >
                         タスク作成
                     </button>
-                    <button className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded-full shadow">
+                    <button 
+                        className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded-full shadow"
+                        onClick={() => setShowStickyNoteForm(true)}
+                    >
                         付箋作成
                     </button>
                     <button className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-full shadow">
@@ -123,7 +224,20 @@ export default function Dashboard() {
                     </div>
                 )}
 
-                {/* 編集モーダル */}
+                {/* 付箋作成フォーム */}
+                {showStickyNoteForm && (
+                    <div
+                        ref={formContainerRef}
+                        className="absolute top-20 left-1/2 transform -translate-x-1/2 z-50"
+                    >
+                        <StickyNoteForm
+                            onSuccess={handleStickyNoteCreated}
+                            onClose={() => setShowStickyNoteForm(false)}
+                        />
+                    </div>
+                )}
+
+                {/* タスク編集モーダル */}
                 <Modal show={!!editingTask} onClose={() => setEditingTask(null)}>
                     {editingTask && (
                         <EditTaskForm
@@ -134,17 +248,44 @@ export default function Dashboard() {
                     )}
                 </Modal>
 
-                {/* タスク表示エリア */}
+                {/* 付箋編集モーダル */}
+                <Modal show={!!editingStickyNote} onClose={() => setEditingStickyNote(null)}>
+                    {editingStickyNote && (
+                        <EditStickyNoteForm
+                            stickyNote={editingStickyNote}
+                            onSuccess={handleStickyNoteUpdated}
+                            onClose={() => setEditingStickyNote(null)}
+                        />
+                    )}
+                </Modal>
+
+                {/* タスク・付箋表示エリア */}
                 <div className="mt-24 relative z-0">
+                    {/* タスク表示 */}
                     {tasks.map((task) => (
                         <MoveableTask
-                            key={task.id}
+                            key={`task-${task.id}`}
                             task={task}
                             onEdit={(t) => setEditingTask(t)}
                             onDelete={handleTaskDeleted}
                             onPositionUpdate={(updatedTask) => {
                                 setTasks(prev => prev.map(t => 
                                     t.id === updatedTask.id ? { ...t, ...updatedTask } : t
+                                ));
+                            }}
+                        />
+                    ))}
+                    
+                    {/* 付箋表示 */}
+                    {stickyNotes.map((stickyNote) => (
+                        <MoveableStickyNote
+                            key={`sticky-${stickyNote.id}`}
+                            stickyNote={stickyNote}
+                            onEdit={(sn) => setEditingStickyNote(sn)}
+                            onDelete={handleStickyNoteDeleted}
+                            onPositionUpdate={(updatedStickyNote) => {
+                                setStickyNotes(prev => prev.map(sn => 
+                                    sn.id === updatedStickyNote.id ? { ...sn, ...updatedStickyNote } : sn
                                 ));
                             }}
                         />
