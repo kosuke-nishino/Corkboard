@@ -62,21 +62,26 @@ class TaskMemoController extends Controller
 
     public function updatePosition(Request $request, Task $task)
 {
-    // 必要なら認可チェック（任意）
-    // $this->authorize('update', $task);
+    // 認可チェック
+    if ($task->user_id !== Auth::id()) {
+        return response()->json(['message' => '権限がありません'], 403);
+    }
 
     $validated = $request->validate([
-        'x' => 'nullable|numeric',
-        'y' => 'nullable|numeric',
-        'width' => 'nullable|numeric',
-        'height' => 'nullable|numeric',
-        'rotation' => 'nullable|numeric',
-        'z_index' => 'nullable|integer',
+        'x' => 'nullable|numeric|between:-9999,9999',
+        'y' => 'nullable|numeric|between:-9999,9999',
+        'width' => 'nullable|numeric|between:50,1000',
+        'height' => 'nullable|numeric|between:50,1000',
+        'rotation' => 'nullable|numeric|between:-360,360',
+        'z_index' => 'nullable|integer|between:0,999',
     ]);
 
     $task->update($validated);
 
-    return response()->json(['message' => '位置情報を更新しました']);
+    return response()->json([
+        'message' => '位置情報を更新しました',
+        'task' => $task->fresh()
+    ]);
 }
 
     public function destroy(Task $task)

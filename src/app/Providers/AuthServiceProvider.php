@@ -2,20 +2,21 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
+use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
+use App\Policies\TaskPolicy;
+use App\Models\Task;
 
 class AuthServiceProvider extends ServiceProvider
 {
     /**
-     * Register services.
+     * The policy mappings for the application.
      */
-    public function register(): void
-    {
-        //
-    }
+    protected $policies = [
+        Task::class => TaskPolicy::class,
+    ];
 
     /**
-     * Bootstrap services.
+     * Register any authentication / authorization services.
      */
     public function boot(): void
     {
