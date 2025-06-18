@@ -17,8 +17,8 @@ export default function MoveableTask({ task, onEdit, onDelete }) {
                         ref={targetRef}
                         onClick={onClick}
                         style={{
-                            width: `${task.width || 200}px`,
-                            height: `${task.height || 180}px`,
+                            width: `${task.width ?? 200}px`,
+                            height: `${task.height ?? 180}px`,
                             background: task.color || "#ffd",
                             border: isActive ? "2px solid blue" : "1px solid #ccc",
                             transform: `
