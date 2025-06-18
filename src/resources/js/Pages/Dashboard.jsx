@@ -14,26 +14,51 @@ export default function Dashboard() {
     const [editingTask, setEditingTask] = useState(null);
     const formContainerRef = useRef(null); // ← タスクフォームの位置参照用
 
-    const handleTaskCreated = (task) => {
+    const handleTaskCreated = async (task) => {
         // タスクフォームの位置から新規タスクの初期位置を取得
         const formRect = formContainerRef.current?.getBoundingClientRect();
-        const offsetX = formRect?.left || 100;
-        const offsetY = formRect?.top || 100;
+        const offsetX = Math.max(100, (formRect?.left || 100) - 100);
+        const offsetY = Math.max(100, (formRect?.top || 100) - 100);
 
-        // 新規タスクに初期位置情報を追加
-        const newTask = {
-            ...task,
-            width: 200,
-            height: 180,
-            z_index: 10,
-            translateX: offsetX,
-            translateY: offsetY,
-            rotate: 0,
-            scaleX: 1,
-            scaleY: 1
-        };
+        // 新規タスクの初期位置をDBに保存
+        try {
+            const response = await axios.put(`/task-memos/${task.id}/position`, {
+                x: offsetX,
+                y: offsetY,
+                width: 200,
+                height: 180,
+                rotation: 0,
+                z_index: 10,
+            });
+            
+            // 位置情報を含むタスクオブジェクトを作成
+            const newTask = {
+                ...task,
+                x: offsetX,
+                y: offsetY,
+                width: 200,
+                height: 180,
+                rotation: 0,
+                z_index: 10,
+            };
+            
+            setTasks([...tasks, newTask]);
+            console.log("新規タスク作成完了:", newTask);
+        } catch (error) {
+            console.error('初期位置保存エラー:', error);
+            // エラーでも表示はする（位置は後で調整可能）
+            const newTask = {
+                ...task,
+                x: offsetX,
+                y: offsetY,
+                width: 200,
+                height: 180,
+                rotation: 0,
+                z_index: 10,
+            };
+            setTasks([...tasks, newTask]);
+        }
 
-        setTasks([...tasks, newTask]);
         setShowTaskForm(false);
     };
 
@@ -117,6 +142,11 @@ export default function Dashboard() {
                             task={task}
                             onEdit={(t) => setEditingTask(t)}
                             onDelete={handleTaskDeleted}
+                            onPositionUpdate={(updatedTask) => {
+                                setTasks(prev => prev.map(t => 
+                                    t.id === updatedTask.id ? { ...t, ...updatedTask } : t
+                                ));
+                            }}
                         />
                     ))}
                 </div>
