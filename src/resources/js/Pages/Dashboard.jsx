@@ -126,7 +126,7 @@ export default function Dashboard() {
                 width: 150,  // 横長の付箋
                 height: 100, // タスクより小さく
                 rotation: 0,
-                z_index: 5,
+                z_index: 15,
             });
             
             // 位置情報を含む付箋オブジェクトを作成
@@ -137,7 +137,7 @@ export default function Dashboard() {
                 width: 150,
                 height: 100,
                 rotation: 0,
-                z_index: 5,
+                z_index: 15,
             };
             
             setStickyNotes([...stickyNotes, newStickyNote]);
@@ -152,7 +152,7 @@ export default function Dashboard() {
                 width: 150,
                 height: 100,
                 rotation: 0,
-                z_index: 5,
+                z_index: 15,
             };
             setStickyNotes([...stickyNotes, newStickyNote]);
         }
