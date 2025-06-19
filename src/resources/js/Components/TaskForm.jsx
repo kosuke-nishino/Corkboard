@@ -2,12 +2,19 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-export default function TaskForm({ onSuccess, onClose }) {
+export default function TaskForm({ onSuccess, onClose, initialDate = null, onTaskCreated }) {
+    // 日付をYYYY-MM-DD形式に変換する関数
+    const formatDate = (date) => {
+        if (!date) return '';
+        const d = new Date(date);
+        return d.toISOString().split('T')[0];
+    };
+
     const [data, setData] = useState({
         title: '',
         content: '',
-        start_date: '',
-        end_date: '',
+        start_date: initialDate ? formatDate(initialDate) : '',
+        end_date: initialDate ? formatDate(initialDate) : '',
         color: '#fffacd',
         is_completed: false,
         x: 0,  // ← 初期表示位置X（中央表示したいなら動的計算も可）
@@ -23,13 +30,16 @@ export default function TaskForm({ onSuccess, onClose }) {
 
         try {
             const res = await axios.post('/task-memos', data);
+            
+            // 両方のコールバックに対応
+            if (onTaskCreated) onTaskCreated(res.data);
             if (onSuccess) onSuccess(res.data);
 
             setData({
                 title: '',
                 content: '',
-                start_date: '',
-                end_date: '',
+                start_date: initialDate ? formatDate(initialDate) : '',
+                end_date: initialDate ? formatDate(initialDate) : '',
                 color: '#fffacd',
                 is_completed: false,
                 x: 0,

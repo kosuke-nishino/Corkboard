@@ -29,6 +29,14 @@ Route::middleware('auth')->group(function () {
     Route::put('/sticky-notes/{stickyNote}/position', [StickyNoteController::class, 'updatePosition'])->name('stickyNote.updatePosition');
     Route::put('/sticky-notes/{stickyNote}', [StickyNoteController::class, 'update'])->name('stickyNote.update');
     Route::delete('/sticky-notes/{stickyNote}', [StickyNoteController::class, 'destroy'])->name('stickyNote.destroy');
+    
+    // Calendar route
+    Route::get('/calendar', function () {
+        $tasks = auth()->user()->tasks;
+        return Inertia::render('Calendar', [
+            'tasks' => $tasks
+        ]);
+    })->name('calendar');
 });
 
 require __DIR__.'/auth.php';
