@@ -9,6 +9,7 @@ import startOfWeek from 'date-fns/startOfWeek';
 import getDay from 'date-fns/getDay';
 import ja from 'date-fns/locale/ja';
 import "react-big-calendar/lib/css/react-big-calendar.css";
+// カスタムCSSはインラインスタイルで対応
 import { useState, useEffect } from 'react';
 import TaskForm from "@/Components/TaskForm";
 import EditTaskForm from "@/Components/EditTaskForm";
@@ -50,6 +51,45 @@ const calendarStyles = {
     fontWeight: 'bold',
     textDecoration: 'underline',
     padding: '2px 5px',
+  },
+  monthCell: {
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  dateHeader: {
+    paddingRight: '5px',
+    textAlign: 'right',
+    fontSize: '0.85em',
+    fontWeight: 'bold',
+  },
+  eventList: {
+    flex: 1,
+    overflowY: 'auto',
+    padding: '2px 0',
+  },
+};
+
+// カスタム月表示コンポーネント
+const CustomMonthView = {
+  // カスタムの日付セル
+  dateCell: ({ date, children }) => {
+    return (
+      <div style={calendarStyles.monthCell}>
+        {children}
+      </div>
+    );
+  },
+  // カスタムのイベントコンテナ
+  eventContainerWrapper: ({ children, events, value }) => {
+    // 最大4つまで表示
+    const visibleEvents = events.slice(0, 4);
+    
+    return (
+      <div style={calendarStyles.eventList}>
+        {children(visibleEvents)}
+      </div>
+    );
   },
 };
 
@@ -225,7 +265,7 @@ export default function Calendar() {
                 </button>
               </div>
               
-              <div style={{ height: '600px', position: 'relative' }}>
+              <div style={{ height: '700px', position: 'relative' }} className="calendar-container">
                 <DragAndDropCalendar
                   localizer={localizer}
                   events={events}
@@ -266,13 +306,17 @@ export default function Calendar() {
                   // すべてのイベントを表示する設定
                   popup={true}
                   popupOffset={30}
-                  // 「さらに表示」の代わりにすべてのイベントを表示する
+                  // カスタムコンポーネントの設定
                   components={{
-                    // カスタムイベントラッパーを使用して、すべてのイベントを表示
+                    // カスタム月表示コンポーネント
                     month: {
                       dateHeader: ({ date, label }) => {
                         return <span>{label}</span>;
                       },
+                      // 日付セルのカスタマイズ
+                      dateCellWrapper: CustomMonthView.dateCell,
+                      // イベントコンテナのカスタマイズ
+                      eventContainerWrapper: CustomMonthView.eventContainerWrapper,
                     },
                     // カスタムイベントコンポーネント
                     event: (props) => {
@@ -286,20 +330,11 @@ export default function Calendar() {
                         </div>
                       );
                     },
-                    // カスタム「さらに表示」コンポーネント
-                    showMore: ({ count, onShowMore }) => {
-                      return (
-                        <div 
-                          onClick={onShowMore}
-                          style={calendarStyles.showMore}
-                        >
-                          {`さらに ${count} 件表示`}
-                        </div>
-                      );
-                    },
+                    // カスタム「さらに表示」コンポーネント - 表示しない
+                    showMore: () => null,
                   }}
-                  // 1日あたりの最大イベント数を大きな値に設定して、すべて表示されるようにする
-                  dayMaxEvents={100}
+                  // 1日あたりの最大イベント数を4に設定
+                  dayMaxEvents={4}
                 />
               </div>
             </div>
