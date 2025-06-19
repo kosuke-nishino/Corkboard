@@ -5,6 +5,7 @@ export default function EditStickyNoteForm({ stickyNote, onSuccess, onClose }) {
     const [data, setData] = useState({
         content: stickyNote.content || '',
         color: stickyNote.color || '#ffeb3b',
+        z_index: stickyNote.z_index || 15,
     });
 
     const [processing, setProcessing] = useState(false);
@@ -54,6 +55,22 @@ export default function EditStickyNoteForm({ stickyNote, onSuccess, onClose }) {
                             style={{ backgroundColor: color }}
                         />
                     ))}
+                </div>
+            </div>
+            
+            <div>
+                <label className="block text-sm font-bold mb-1">重なり順 (z-index): {data.z_index}</label>
+                <input
+                    type="range"
+                    min="0"
+                    max="999"
+                    value={data.z_index}
+                    onChange={(e) => setData({ ...data, z_index: parseInt(e.target.value) })}
+                    className="w-full"
+                />
+                <div className="flex justify-between text-xs text-gray-500">
+                    <span>手前</span>
+                    <span>奥</span>
                 </div>
             </div>
 

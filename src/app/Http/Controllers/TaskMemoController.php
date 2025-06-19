@@ -55,6 +55,7 @@ class TaskMemoController extends Controller
             'end_date' => 'nullable|date',           
             'color' => 'nullable|string|max:20',
             'is_completed' => 'boolean',
+            'z_index' => 'nullable|integer|between:0,999',
         ]);
 
         $task->update($validated);

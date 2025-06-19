@@ -43,6 +43,7 @@ class StickyNoteController extends Controller
         $validated = $request->validate([
             'content' => 'nullable|string|max:1000',
             'color' => 'nullable|string|max:20',
+            'z_index' => 'nullable|integer|between:0,999',
         ]);
 
         $stickyNote->update($validated);

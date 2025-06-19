@@ -9,6 +9,7 @@ export default function EditTaskForm({ task, onSuccess, onClose }) {
         end_date: task.end_date || '',
         color: task.color || '#fffacd',
         is_completed: task.is_completed || false,
+        z_index: task.z_index || 10,
     });
 
     const [processing, setProcessing] = useState(false);
@@ -95,6 +96,22 @@ export default function EditTaskForm({ task, onSuccess, onClose }) {
                     className="mr-2"
                 />
                 <span className="text-sm">完了としてマーク</span>
+            </div>
+            
+            <div>
+                <label className="block text-sm font-bold mb-1">重なり順 (z-index): {data.z_index}</label>
+                <input
+                    type="range"
+                    min="0"
+                    max="999"
+                    value={data.z_index}
+                    onChange={(e) => setData({ ...data, z_index: parseInt(e.target.value) })}
+                    className="w-full"
+                />
+                <div className="flex justify-between text-xs text-gray-500">
+                    <span>手前</span>
+                    <span>奥</span>
+                </div>
             </div>
 
             <div className="text-right flex justify-between">

@@ -19,6 +19,7 @@ export default function TaskForm({ onSuccess, onClose, initialDate = null, onTas
         is_completed: false,
         x: 0,  // ← 初期表示位置X（中央表示したいなら動的計算も可）
         y: 100, // ← ヘッダー下
+        z_index: 10, // ← 重なり順（デフォルト値）
     });
 
     const [processing, setProcessing] = useState(false);
@@ -44,6 +45,7 @@ export default function TaskForm({ onSuccess, onClose, initialDate = null, onTas
                 is_completed: false,
                 x: 0,
                 y: 100,
+                z_index: 10,
             });
             setErrors({});
         } catch (err) {
@@ -119,6 +121,22 @@ export default function TaskForm({ onSuccess, onClose, initialDate = null, onTas
                     className="mr-2"
                 />
                 <span className="text-sm">完了としてマーク</span>
+            </div>
+            
+            <div>
+                <label className="block text-sm font-bold mb-1">重なり順 (z-index): {data.z_index}</label>
+                <input
+                    type="range"
+                    min="0"
+                    max="999"
+                    value={data.z_index}
+                    onChange={(e) => setData({ ...data, z_index: parseInt(e.target.value) })}
+                    className="w-full"
+                />
+                <div className="flex justify-between text-xs text-gray-500">
+                    <span>手前</span>
+                    <span>奥</span>
+                </div>
             </div>
 
             <div className="text-right flex justify-between">
