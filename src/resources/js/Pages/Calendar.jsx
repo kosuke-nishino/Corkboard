@@ -148,7 +148,6 @@ export default function Calendar() {
         setTasks(tasks.filter(task => task.id !== selectedTask.id));
         setShowActionMenu(false);
       } catch (error) {
-        console.error('タスク削除エラー:', error);
         alert('タスクの削除に失敗しました');
       }
     }
@@ -182,11 +181,8 @@ export default function Calendar() {
       // タスクリストを更新
       setTasks(tasks.map(t =>
         t.id === task.id ? response.data : t
-      ));
-
-      console.log(`タスク "${task.title}" の日付を変更しました:`, formatDate(start));
+      ));      
     } catch (error) {
-      console.error('タスクの日付変更に失敗しました:', error);
       alert('タスクの日付変更に失敗しました。');
     }
   };
@@ -216,9 +212,7 @@ export default function Calendar() {
       };
 
       setTasks([...tasks, newTask]);
-      console.log("新規タスク作成完了:", newTask);
     } catch (error) {
-      console.error('初期位置保存エラー:', error);
       // エラーでも表示はする（位置は後で調整可能）
       const newTask = {
         ...task,
@@ -308,7 +302,7 @@ export default function Calendar() {
       </div>
 
       {/* タスク作成モーダル */}
-      <Modal show={showTaskForm} onClose={() => setShowTaskForm(false)}>
+      <Modal show={showTaskForm} onClose={() => setShowTaskForm(false)} maxWidth="md">
         <TaskForm
           onTaskCreated={handleTaskCreated}
           initialDate={selectedDate}
@@ -318,7 +312,6 @@ export default function Calendar() {
 
       {/* タスク詳細モーダル */}
       <Modal show={showTaskDetail} onClose={() => setShowTaskDetail(false)}>
-        {selectedTask && (
           <TaskDetail
             task={selectedTask}
             onEdit={() => {
@@ -327,11 +320,10 @@ export default function Calendar() {
             }}
             onDelete={handleDeleteClick}
           />
-        )}
       </Modal>
 
       {/* タスク編集モーダル */}
-      <Modal show={showEditForm} onClose={() => setShowEditForm(false)}>
+      <Modal show={showEditForm} onClose={() => setShowEditForm(false)} maxWidth="md">
         {selectedTask && (
           <EditTaskForm
             task={selectedTask}
