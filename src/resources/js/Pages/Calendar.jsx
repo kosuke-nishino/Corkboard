@@ -251,7 +251,7 @@ export default function Calendar() {
     >
       <Head title="カレンダー" />
 
-      <div className="py-12" onClick={handleClickOutside}>
+      <div className="py-12">
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
           <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
             <div className="p-6 text-gray-900">
@@ -267,75 +267,64 @@ export default function Calendar() {
               
               <div style={{ height: '700px', position: 'relative' }} className="calendar-container">
                 <DragAndDropCalendar
-                  localizer={localizer}
-                  events={events}
-                  startAccessor="start"
-                  endAccessor="end"
-                  style={{ height: '100%' }}
-                  onSelectEvent={handleSelectEvent}
-                  onSelectSlot={handleSelectSlot}
-                  selectable
-                  draggableAccessor={() => true}
-                  onEventDrop={handleEventDrop}
-                  resizable
-                  views={['month', 'week', 'day']}
-                  messages={{
-                    today: '今日',
-                    previous: '前へ',
-                    next: '次へ',
-                    month: '月',
-                    week: '週',
-                    day: '日',
-                    agenda: 'アジェンダ',
-                    date: '日付',
-                    time: '時間',
-                    event: 'イベント',
-                    allDay: '終日',
-                    noEventsInRange: 'この期間にイベントはありません',
-                    showMore: count => `さらに ${count} 件表示`, // 「さらに表示」のテキストをカスタマイズ
-                  }}
-                  culture="ja"
-                  // イベントの背景色をタスクのcolor属性に合わせる
-                  eventPropGetter={(event) => ({
-                    style: {
-                      backgroundColor: event.color,
-                      borderColor: event.color,
-                      color: '#000', // テキストの色を黒に設定（明るい背景色でも読みやすくするため）
-                    },
-                  })}
-                  // すべてのイベントを表示する設定
-                  popup={true}
-                  popupOffset={30}
-                  // カスタムコンポーネントの設定
-                  components={{
-                    // カスタム月表示コンポーネント
-                    month: {
-                      dateHeader: ({ date, label }) => {
-                        return <span>{label}</span>;
-                      },
-                      // 日付セルのカスタマイズ
-                      dateCellWrapper: CustomMonthView.dateCell,
-                      // イベントコンテナのカスタマイズ
-                      eventContainerWrapper: CustomMonthView.eventContainerWrapper,
-                    },
-                    // カスタムイベントコンポーネント
-                    event: (props) => {
-                      const { event, title } = props;
-                      return (
-                        <div 
-                          style={{ ...calendarStyles.event }}
-                          className="cursor-pointer hover:opacity-80"
-                        >
-                          {title}
-                        </div>
-                      );
-                    },
-                    // カスタム「さらに表示」コンポーネント - 表示しない
-                    showMore: () => null,
-                  }}
-                  // 1日あたりの最大イベント数を4に設定
-                  dayMaxEvents={4}
-                />
+  localizer={localizer}
+  events={events}
+  startAccessor="start"
+  endAccessor="end"
+  style={{ height: '100%' }}
+  onSelectEvent={handleSelectEvent}
+  onSelectSlot={handleSelectSlot}
+  selectable
+  draggableAccessor={() => true}
+  onEventDrop={handleEventDrop}
+  resizable
+  views={['month', 'week']} // ← 'day' を削除！
+  messages={{
+    today: '今日',
+    previous: '前へ',
+    next: '次へ',
+    month: '月',
+    week: '週',
+    // day: '日', ← これも不要なので削除可能
+    agenda: 'アジェンダ',
+    date: '日付',
+    time: '時間',
+    event: 'イベント',
+    allDay: '終日',
+    noEventsInRange: 'この期間にイベントはありません',
+    showMore: count => `さらに ${count} 件表示`,
+  }}
+  culture="ja"
+  eventPropGetter={(event) => ({
+    style: {
+      backgroundColor: event.color,
+      borderColor: event.color,
+      color: '#000',
+    },
+  })}
+  popup={true}
+  popupOffset={30}
+  components={{
+    month: {
+      dateHeader: ({ date, label }) => <span>{label}</span>,
+      dateCellWrapper: CustomMonthView.dateCell,
+      eventContainerWrapper: CustomMonthView.eventContainerWrapper,
+    },
+    event: (props) => {
+      const { event, title } = props;
+      return (
+        <div 
+          style={{ ...calendarStyles.event }}
+          className="cursor-pointer hover:opacity-80"
+        >
+          {title}
+        </div>
+      );
+    },
+    showMore: () => null,
+  }}
+  dayMaxEvents={4}
+/>
               </div>
             </div>
           </div>
