@@ -340,6 +340,7 @@ export default function Calendar() {
           <TaskForm 
             onTaskCreated={handleTaskCreated} 
             initialDate={selectedDate}
+            onClose={() => setShowTaskForm(false)}
           />
         </div>
       </Modal>
