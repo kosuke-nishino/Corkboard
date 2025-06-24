@@ -20,12 +20,21 @@ export default function MoveableImage({ image, onDelete, onPositionUpdate }) {
         });
     }, [image]);
 
-    const handleDrag = async ({ target, left, top }) => {
-        // リアルタイムで位置を更新
+    // 背景クリックで選択解除
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (imageRef.current && !imageRef.current.contains(event.target)) {
+                setIsSelected(false);
+            }
+        };
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, []);
+
+    // ドラッグ中リアルタイム更新
+    const handleDrag = ({ target, left, top }) => {
         target.style.left = `${left}px`;
         target.style.top = `${top}px`;
-        
-        // 状態を即座に更新
         if (onPositionUpdate) {
             onPositionUpdate({
                 ...image,
@@ -35,19 +44,22 @@ export default function MoveableImage({ image, onDelete, onPositionUpdate }) {
         }
     };
 
+    // ドラッグ終了 → 回転を解除して正しい位置取得・保存
     const handleDragEnd = async ({ target }) => {
-        // ドラッグ終了時にサーバーに保存
-        const rect = target.getBoundingClientRect();
         const parentRect = target.parentElement.getBoundingClientRect();
-        
+        const originalTransform = target.style.transform;
+        target.style.transform = 'none';
+        const rect = target.getBoundingClientRect();
+        target.style.transform = originalTransform;
+
         const newX = rect.left - parentRect.left;
         const newY = rect.top - parentRect.top;
 
         try {
-            console.log('📍 画像位置保存:', { id: image.id, x: newX, y: newY });
             await axios.put(`/test/images/${image.id}/position`, {
                 x: newX,
                 y: newY,
+                rotation: image.rotation,
             });
             console.log('✅ 画像位置保存完了');
         } catch (error) {
@@ -55,52 +67,45 @@ export default function MoveableImage({ image, onDelete, onPositionUpdate }) {
         }
     };
 
-    const handleResize = async ({ target, width, height, drag }) => {
-        // リアルタイムでサイズを更新
+    // リサイズ中リアルタイム更新
+    const handleResize = ({ target, width, height, drag }) => {
         target.style.width = `${width}px`;
         target.style.height = `${height}px`;
-        
-        // ドラッグも同時に発生する場合
         if (drag) {
             target.style.left = `${drag.left}px`;
             target.style.top = `${drag.top}px`;
         }
-
-        // 状態を即座に更新
         if (onPositionUpdate) {
             onPositionUpdate({
                 ...image,
-                width: width,
-                height: height,
+                width,
+                height,
                 x: drag ? drag.left : image.x,
                 y: drag ? drag.top : image.y,
             });
         }
     };
 
+    // リサイズ終了 → 回転解除して正しいサイズ取得・保存
     const handleResizeEnd = async ({ target }) => {
-        // リサイズ終了時にサーバーに保存
-        const rect = target.getBoundingClientRect();
         const parentRect = target.parentElement.getBoundingClientRect();
-        
+        const originalTransform = target.style.transform;
+        target.style.transform = 'none';
+        const rect = target.getBoundingClientRect();
+        target.style.transform = originalTransform;
+
         const newX = rect.left - parentRect.left;
         const newY = rect.top - parentRect.top;
         const newWidth = rect.width;
         const newHeight = rect.height;
 
         try {
-            console.log('📏 画像サイズ保存:', { 
-                id: image.id, 
-                x: newX, 
-                y: newY, 
-                width: newWidth, 
-                height: newHeight 
-            });
             await axios.put(`/test/images/${image.id}/position`, {
                 x: newX,
                 y: newY,
                 width: newWidth,
                 height: newHeight,
+                rotation: image.rotation,
             });
             console.log('✅ 画像サイズ保存完了');
         } catch (error) {
@@ -108,11 +113,9 @@ export default function MoveableImage({ image, onDelete, onPositionUpdate }) {
         }
     };
 
-    const handleRotate = async ({ target, rotate }) => {
-        // リアルタイムで回転を更新
+    // 回転中リアルタイム更新
+    const handleRotate = ({ target, rotate }) => {
         target.style.transform = `rotate(${rotate}deg)`;
-        
-        // 状態を即座に更新
         if (onPositionUpdate) {
             onPositionUpdate({
                 ...image,
@@ -121,10 +124,9 @@ export default function MoveableImage({ image, onDelete, onPositionUpdate }) {
         }
     };
 
+    // 回転終了 → 回転だけ保存
     const handleRotateEnd = async () => {
-        // 回転終了時にサーバーに保存
         try {
-            console.log('🔄 画像回転保存:', { id: image.id, rotation: image.rotation });
             await axios.put(`/test/images/${image.id}/position`, {
                 rotation: image.rotation,
             });
@@ -153,7 +155,10 @@ export default function MoveableImage({ image, onDelete, onPositionUpdate }) {
                     transform: `rotate(${image.rotation || 0}deg)`,
                     zIndex: image.z_index || 5,
                 }}
-                onClick={() => setIsSelected(!isSelected)}
+                onClick={(e) => {
+                    e.stopPropagation(); // 画像クリック時は選択状態維持
+                    setIsSelected(true);
+                }}
             >
                 {image.file_path ? (
                     <img
@@ -167,33 +172,31 @@ export default function MoveableImage({ image, onDelete, onPositionUpdate }) {
                         <span className="text-gray-500 text-sm">画像なし</span>
                     </div>
                 )}
-                
+
                 {/* 削除ボタン */}
-               <div className="absolute top-1 right-1 flex gap-1">
-                                
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (confirm('この付箋を削除しますか？')) {
-                                            onDelete(Image);
-                                        }
-                                    }}
-                                    className="bg-red-500 text-white text-xs px-1 py-1 rounded hover:bg-red-600 shadow"
-                                    style={{ fontSize: '10px', lineHeight: '1' }}
-                                >
-                                    🗑
-                                </button>
-                            </div>
-               
+                <div className="absolute top-1 right-1 flex gap-1">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm('この画像を削除しますか？')) {
+                                onDelete(image);
+                            }
+                        }}
+                        className="bg-red-500 text-white text-xs px-1 py-1 rounded hover:bg-red-600 shadow"
+                        style={{ fontSize: '10px', lineHeight: '1' }}
+                    >
+                        🗑
+                    </button>
+                </div>
             </div>
 
-            {/* Moveableコンポーネント */}
+            {/* Moveable コンポーネント */}
             {isSelected && (
                 <Moveable
                     target={imageRef.current}
-                    draggable={true}
-                    resizable={true}
-                    rotatable={true}
+                    draggable
+                    resizable
+                    rotatable
                     keepRatio={false}
                     origin={false}
                     throttleDrag={1}
@@ -206,7 +209,6 @@ export default function MoveableImage({ image, onDelete, onPositionUpdate }) {
                     onResizeEnd={handleResizeEnd}
                     onRotate={handleRotate}
                     onRotateEnd={handleRotateEnd}
-                    // スタイリング
                     className="moveable-control"
                 />
             )}
