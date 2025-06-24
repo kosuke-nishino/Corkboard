@@ -42,9 +42,47 @@ export default function Dashboard() {
         fetchImages();
     }, []);
 
- 
+    // デバッグ: 初期データの確認
+    useEffect(() => {
+        console.log('🔍 Dashboard初期化 - サーバーから受信したタスクデータ:', props.tasks?.map(t => ({
+            id: t.id,
+            title: t.title,
+            width: t.width,
+            height: t.height,
+            x: t.x,
+            y: t.y,
+            widthType: typeof t.width,
+            heightType: typeof t.height
+        })));
+        
+        console.log('🔍 Dashboard初期化 - 画像データ:', images?.map(img => ({
+            id: img.id,
+            file_path: img.file_path,
+            x: img.x,
+            y: img.y,
+            width: img.width,
+            height: img.height
+        })));
+    }, [props.tasks, images]);
     const handleTaskCreated = async (task) => {
-       
+        // デバッグ: フォームの位置情報を確認
+        const formRect = formContainerRef.current?.getBoundingClientRect();
+        console.log("🔍 FormRect debug:", {
+            formRect,
+            left: formRect?.left,
+            top: formRect?.top,
+            width: formRect?.width,
+            height: formRect?.height,
+            showTaskForm,
+            formContainerExists: !!formContainerRef.current
+        });
+        
+        // 一時的に固定位置でテスト
+        const offsetX = 200; // 固定値でテスト
+        const offsetY = 200; // 固定値でテスト
+        
+        console.log("🎯 Using fixed position:", { offsetX, offsetY });
+
         // 新規タスクの初期位置をDBに保存
         try {
             const response = await axios.put(`/task-memos/${task.id}/position`, {
