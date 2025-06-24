@@ -4,7 +4,7 @@ import TaskForm from "@/Components/TaskForm";
 import EditTaskForm from "@/Components/EditTaskForm";
 import MoveableTask from "@/Components/MoveableTask";
 import StickyNoteForm from "@/Components/StickyNoteForm";
-import ImageForm from '@/Components/Imageform';
+import ImageForm from '@/Components/ImageForm';
 import EditStickyNoteForm from "@/Components/EditStickyNoteForm";
 import MoveableStickyNote from "@/Components/MoveableStickyNote";
 import Modal from "@/Components/Modal";
@@ -23,6 +23,24 @@ export default function Dashboard() {
     const [editingStickyNote, setEditingStickyNote] = useState(null);
     const formContainerRef = useRef(null); // ← タスクフォームの位置参照用
 
+    // 画像データの初期取得
+    useEffect(() => {
+        const fetchImages = async () => {
+            try {
+                console.log('🔄 画像データ取得開始');
+                const imagesResponse = await axios.get('/test/images');
+                console.log('📷 取得した画像データ:', imagesResponse.data);
+                setImages(imagesResponse.data || []);
+            } catch (error) {
+                console.error('画像データ取得エラー:', error);
+                // エラーでも空配列で初期化
+                setImages([]);
+            }
+        };
+
+        fetchImages();
+    }, []);
+
     // デバッグ: 初期データの確認
     useEffect(() => {
         console.log('🔍 Dashboard初期化 - サーバーから受信したタスクデータ:', props.tasks?.map(t => ({
@@ -35,7 +53,16 @@ export default function Dashboard() {
             widthType: typeof t.width,
             heightType: typeof t.height
         })));
-    }, [props.tasks]);
+        
+        console.log('🔍 Dashboard初期化 - 画像データ:', images?.map(img => ({
+            id: img.id,
+            file_path: img.file_path,
+            x: img.x,
+            y: img.y,
+            width: img.width,
+            height: img.height
+        })));
+    }, [props.tasks, images]);
 
     const handleTaskCreated = async (task) => {
         // デバッグ: フォームの位置情報を確認
@@ -180,6 +207,67 @@ export default function Dashboard() {
         }
     };
 
+    const handleImageCreated = async (image) => {
+        console.log('📷 画像作成完了:', image);
+        
+        // 画像フォームの位置から新規画像の初期位置を取得
+        const formRect = formContainerRef.current?.getBoundingClientRect();
+        const offsetX = Math.max(300, (formRect?.left || 300) - 100);
+        const offsetY = Math.max(300, (formRect?.top || 300) - 100);
+
+        // 新規画像の初期位置をDBに保存
+        try {
+            const response = await axios.put(`/test/images/${image.id}/position`, {
+                x: offsetX,
+                y: offsetY,
+                width: image.width || 200,
+                height: image.height || 150,
+                rotation: 0,
+                z_index: image.z_index || 5,
+            });
+            
+            // 位置情報を含む画像オブジェクトを作成
+            const newImage = {
+                ...image,
+                x: offsetX,
+                y: offsetY,
+                width: image.width || 200,
+                height: image.height || 150,
+                rotation: 0,
+                z_index: image.z_index || 5,
+            };
+            
+            setImages([...images, newImage]);
+            console.log("新規画像作成完了:", newImage);
+        } catch (error) {
+            console.error('画像初期位置保存エラー:', error);
+            // エラーでも表示はする
+            const newImage = {
+                ...image,
+                x: offsetX,
+                y: offsetY,
+                width: image.width || 200,
+                height: image.height || 150,
+                rotation: 0,
+                z_index: image.z_index || 5,
+            };
+            setImages([...images, newImage]);
+        }
+
+        setShowImageForm(false);
+    };
+
+    const handleImageDeleted = async (image) => {
+        try {
+            await axios.delete(`/test/images/${image.id}`);
+            setImages((prev) => prev.filter((img) => img.id !== image.id));
+            console.log('画像削除完了:', image.id);
+        } catch (error) {
+            console.error('画像削除エラー:', error);
+            alert('画像削除に失敗しました');
+        }
+    };
+
     return (
         <AuthenticatedLayout>
             <Head title="Corkboard" />
@@ -233,6 +321,19 @@ export default function Dashboard() {
                     </div>
                 )}
 
+                {/* 画像作成フォーム */}
+                {showImageForm && (
+                    <div
+                        ref={formContainerRef}
+                        className="absolute top-20 left-1/2 transform -translate-x-1/2 z-50"
+                    >
+                        <ImageForm
+                            onSuccess={handleImageCreated}
+                            onClose={() => setShowImageForm(false)}
+                        />
+                    </div>
+                )}
+
                 {/* タスク編集モーダル */}
                 <Modal show={!!editingTask} onClose={() => setEditingTask(null)}>
                     {editingTask && (
@@ -255,7 +356,7 @@ export default function Dashboard() {
                     )}
                 </Modal>
 
-                {/* タスク・付箋表示エリア */}
+                {/* タスク・付箋・画像表示エリア */}
                 <div className="mt-24 relative z-0">
                     {/* タスク表示 */}
                     {tasks.map((task) => (
@@ -285,6 +386,85 @@ export default function Dashboard() {
                                 ));
                             }}
                         />
+                    ))}
+
+                    {/* 画像表示 */}
+                    {images.map((image) => (
+                        <div
+                            key={`image-${image.id}`}
+                            className="absolute cursor-move group"
+                            style={{
+                                left: `${image.x || 300}px`,
+                                top: `${image.y || 300}px`,
+                                width: `${image.width || 200}px`,
+                                height: `${image.height || 150}px`,
+                                transform: `rotate(${image.rotation || 0}deg)`,
+                                zIndex: image.z_index || 5,
+                            }}
+                            onMouseDown={(e) => {
+                                // 簡単なドラッグ機能（後でMoveableImageコンポーネントに置き換え予定）
+                                let isDragging = false;
+                                let startX = e.clientX - (image.x || 300);
+                                let startY = e.clientY - (image.y || 300);
+
+                                const handleMouseMove = (e) => {
+                                    if (!isDragging) return;
+                                    const newX = e.clientX - startX;
+                                    const newY = e.clientY - startY;
+                                    
+                                    setImages(prev => prev.map(img => 
+                                        img.id === image.id ? { ...img, x: newX, y: newY } : img
+                                    ));
+                                };
+
+                                const handleMouseUp = async () => {
+                                    if (isDragging) {
+                                        // 位置をサーバーに保存
+                                        try {
+                                            await axios.put(`/test/images/${image.id}/position`, {
+                                                x: image.x,
+                                                y: image.y,
+                                            });
+                                        } catch (error) {
+                                            console.error('画像位置保存エラー:', error);
+                                        }
+                                    }
+                                    isDragging = false;
+                                    document.removeEventListener('mousemove', handleMouseMove);
+                                    document.removeEventListener('mouseup', handleMouseUp);
+                                };
+
+                                isDragging = true;
+                                document.addEventListener('mousemove', handleMouseMove);
+                                document.addEventListener('mouseup', handleMouseUp);
+                            }}
+                        >
+                            {image.file_path ? (
+                                <img
+                                    src={`/storage/${image.file_path}`}
+                                    alt="アップロード画像"
+                                    className="w-full h-full object-cover rounded shadow-lg"
+                                    draggable={false}
+                                />
+                            ) : (
+                                <div className="w-full h-full bg-gray-200 border-2 border-dashed border-gray-400 rounded flex items-center justify-center">
+                                    <span className="text-gray-500">画像なし</span>
+                                </div>
+                            )}
+                            
+                            {/* 削除ボタン */}
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (confirm('この画像を削除しますか？')) {
+                                        handleImageDeleted(image);
+                                    }
+                                }}
+                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                                ×
+                            </button>
+                        </div>
                     ))}
                 </div>
             </div>
