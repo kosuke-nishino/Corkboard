@@ -7,6 +7,7 @@ import StickyNoteForm from "@/Components/StickyNoteForm";
 import ImageForm from '@/Components/ImageForm';
 import EditStickyNoteForm from "@/Components/EditStickyNoteForm";
 import MoveableStickyNote from "@/Components/MoveableStickyNote";
+import MoveableImage from "@/Components/MoveableImage";
 import Modal from "@/Components/Modal";
 import { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
@@ -41,48 +42,9 @@ export default function Dashboard() {
         fetchImages();
     }, []);
 
-    // デバッグ: 初期データの確認
-    useEffect(() => {
-        console.log('🔍 Dashboard初期化 - サーバーから受信したタスクデータ:', props.tasks?.map(t => ({
-            id: t.id,
-            title: t.title,
-            width: t.width,
-            height: t.height,
-            x: t.x,
-            y: t.y,
-            widthType: typeof t.width,
-            heightType: typeof t.height
-        })));
-        
-        console.log('🔍 Dashboard初期化 - 画像データ:', images?.map(img => ({
-            id: img.id,
-            file_path: img.file_path,
-            x: img.x,
-            y: img.y,
-            width: img.width,
-            height: img.height
-        })));
-    }, [props.tasks, images]);
-
+ 
     const handleTaskCreated = async (task) => {
-        // デバッグ: フォームの位置情報を確認
-        const formRect = formContainerRef.current?.getBoundingClientRect();
-        console.log("🔍 FormRect debug:", {
-            formRect,
-            left: formRect?.left,
-            top: formRect?.top,
-            width: formRect?.width,
-            height: formRect?.height,
-            showTaskForm,
-            formContainerExists: !!formContainerRef.current
-        });
-        
-        // 一時的に固定位置でテスト
-        const offsetX = 200; // 固定値でテスト
-        const offsetY = 200; // 固定値でテスト
-        
-        console.log("🎯 Using fixed position:", { offsetX, offsetY });
-
+       
         // 新規タスクの初期位置をDBに保存
         try {
             const response = await axios.put(`/task-memos/${task.id}/position`, {
@@ -390,81 +352,16 @@ export default function Dashboard() {
 
                     {/* 画像表示 */}
                     {images.map((image) => (
-                        <div
+                        <MoveableImage
                             key={`image-${image.id}`}
-                            className="absolute cursor-move group"
-                            style={{
-                                left: `${image.x || 300}px`,
-                                top: `${image.y || 300}px`,
-                                width: `${image.width || 200}px`,
-                                height: `${image.height || 150}px`,
-                                transform: `rotate(${image.rotation || 0}deg)`,
-                                zIndex: image.z_index || 5,
+                            image={image}
+                            onDelete={handleImageDeleted}
+                            onPositionUpdate={(updatedImage) => {
+                                setImages(prev => prev.map(img => 
+                                    img.id === updatedImage.id ? { ...img, ...updatedImage } : img
+                                ));
                             }}
-                            onMouseDown={(e) => {
-                                // 簡単なドラッグ機能（後でMoveableImageコンポーネントに置き換え予定）
-                                let isDragging = false;
-                                let startX = e.clientX - (image.x || 300);
-                                let startY = e.clientY - (image.y || 300);
-
-                                const handleMouseMove = (e) => {
-                                    if (!isDragging) return;
-                                    const newX = e.clientX - startX;
-                                    const newY = e.clientY - startY;
-                                    
-                                    setImages(prev => prev.map(img => 
-                                        img.id === image.id ? { ...img, x: newX, y: newY } : img
-                                    ));
-                                };
-
-                                const handleMouseUp = async () => {
-                                    if (isDragging) {
-                                        // 位置をサーバーに保存
-                                        try {
-                                            await axios.put(`/test/images/${image.id}/position`, {
-                                                x: image.x,
-                                                y: image.y,
-                                            });
-                                        } catch (error) {
-                                            console.error('画像位置保存エラー:', error);
-                                        }
-                                    }
-                                    isDragging = false;
-                                    document.removeEventListener('mousemove', handleMouseMove);
-                                    document.removeEventListener('mouseup', handleMouseUp);
-                                };
-
-                                isDragging = true;
-                                document.addEventListener('mousemove', handleMouseMove);
-                                document.addEventListener('mouseup', handleMouseUp);
-                            }}
-                        >
-                            {image.file_path ? (
-                                <img
-                                    src={`/storage/${image.file_path}`}
-                                    alt="アップロード画像"
-                                    className="w-full h-full object-cover rounded shadow-lg"
-                                    draggable={false}
-                                />
-                            ) : (
-                                <div className="w-full h-full bg-gray-200 border-2 border-dashed border-gray-400 rounded flex items-center justify-center">
-                                    <span className="text-gray-500">画像なし</span>
-                                </div>
-                            )}
-                            
-                            {/* 削除ボタン */}
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (confirm('この画像を削除しますか？')) {
-                                        handleImageDeleted(image);
-                                    }
-                                }}
-                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                                ×
-                            </button>
-                        </div>
+                        />
                     ))}
                 </div>
             </div>
