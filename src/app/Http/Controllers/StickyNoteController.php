@@ -11,7 +11,11 @@ class StickyNoteController extends Controller
     public function index()
     {
         $stickyNotes = StickyNote::where('user_id', Auth::id())->get();
-        return response()->json($stickyNotes);
+        
+        return Inertia::render('Dashboard', [
+            'stickyNotes' => $stickyNotes, 
+    ]);
+        
     }
 
     public function store(Request $request)
