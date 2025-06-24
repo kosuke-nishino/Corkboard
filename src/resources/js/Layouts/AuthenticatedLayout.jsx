@@ -34,7 +34,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                     href={route('calendar')}
                                     active={route().current('calendar')}
                                 >
-                                    カレンダー
+                                    Calendar
                                 </NavLink>
                             </div>
                         </div>

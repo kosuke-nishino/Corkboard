@@ -4,6 +4,7 @@ import TaskForm from "@/Components/TaskForm";
 import EditTaskForm from "@/Components/EditTaskForm";
 import MoveableTask from "@/Components/MoveableTask";
 import StickyNoteForm from "@/Components/StickyNoteForm";
+import ImageForm from '@/Components/Imageform';
 import EditStickyNoteForm from "@/Components/EditStickyNoteForm";
 import MoveableStickyNote from "@/Components/MoveableStickyNote";
 import Modal from "@/Components/Modal";
@@ -14,8 +15,10 @@ export default function Dashboard() {
     const { props } = usePage();
     const [showTaskForm, setShowTaskForm] = useState(false);
     const [showStickyNoteForm, setShowStickyNoteForm] = useState(false);
+    const [showImageForm, setShowImageForm] = useState(false);
     const [tasks, setTasks] = useState(props.tasks || []);
     const [stickyNotes, setStickyNotes] = useState(props.stickyNotes || []);
+    const [images, setImages] = useState(props.images || []);
     const [editingTask, setEditingTask] = useState(null);
     const [editingStickyNote, setEditingStickyNote] = useState(null);
     const formContainerRef = useRef(null); // ← タスクフォームの位置参照用
@@ -182,16 +185,7 @@ export default function Dashboard() {
             <Head title="Corkboard" />
 
             <div className="relative min-h-screen bg-[url('/images/bgcork.jpg')] p-6 overflow-hidden">
-                {/* ゴミ箱ボタン */}
-                <div className="absolute top-4 left-4">
-                    <button
-                        className="flex items-center justify-center w-12 h-12 bg-red-100 hover:bg-red-200 rounded-full shadow text-red-700 text-xl"
-                        title="ゴミ箱"
-                    >
-                        🗑
-                    </button>
-                </div>
-
+                
                 {/* 作成ボタン群 */}
                 <div className="absolute top-4 right-4 flex gap-2">
                     <button
@@ -206,7 +200,9 @@ export default function Dashboard() {
                     >
                         付箋作成
                     </button>
-                    <button className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-full shadow">
+                    <button 
+                        className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-full shadow"
+                        onClick={() => setShowImageForm(true)}>
                         画像作成
                     </button>
                 </div>
