@@ -1,9 +1,9 @@
 import React from 'react';
 import Moveable from './Moveable';
 
-export default function MoveableStickyNote({ stickyNote, onEdit, onDelete }) {
+export default function MoveableStickyNote({ stickyNote, onEdit, onDelete, onPositionUpdate }) {
     return (
-        <Moveable stickyNote={stickyNote} updateUrl="/sticky-notes" onPositionUpdate={() => {}}>
+        <Moveable stickyNote={stickyNote} updateUrl="/sticky-notes" onPositionUpdate={onPositionUpdate}>
             {({ targetRef, frameRef, isActive, onClick }) => {
                 const translateX = frameRef.current?.translate?.[0] ?? stickyNote.x ?? 0;
                 const translateY = frameRef.current?.translate?.[1] ?? stickyNote.y ?? 0;
