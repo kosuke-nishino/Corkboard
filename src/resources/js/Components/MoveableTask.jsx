@@ -4,7 +4,7 @@ import Moveable from './Moveable';
 
 export default function MoveableTask({ task, onEdit, onDelete }) {
     return (
-        <Moveable task={task} updateUrl="/task-memos">
+        <Moveable item={task} updateUrl="/task-memos">
             {({ targetRef, frameRef, isActive, onClick }) => {
                 const translateX = frameRef.current?.translate?.[0] ?? task.x ?? 0;
                 const translateY = frameRef.current?.translate?.[1] ?? task.y ?? 0;

@@ -3,7 +3,7 @@ import Moveable from "react-moveable";
 import axios from "axios";
 
 export default function MoveableWrapper({ item, updateUrl, children }) {
-    const item = item;
+    
     const targetRef = useRef(null);
     const frameRef = useRef({
         translate: [0, 0],

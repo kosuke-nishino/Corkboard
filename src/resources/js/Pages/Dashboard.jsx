@@ -18,7 +18,7 @@ export default function Dashboard() {
     const [showStickyNoteForm, setShowStickyNoteForm] = useState(false);
     const [showImageForm, setShowImageForm] = useState(false);
     const [tasks, setTasks] = useState(props.tasks || []);
-    const [stickyNotes, setStickyNotes] = useState(props.stickyNotes || []);
+    const [stickyNotes, setStickyNotes] = useState([]);
     const [images, setImages] = useState(props.images || []);
     const [editingTask, setEditingTask] = useState(null);
     const [editingStickyNote, setEditingStickyNote] = useState(null);
@@ -40,6 +40,23 @@ export default function Dashboard() {
         };
 
         fetchImages();
+    }, []);
+
+    // 付箋データの初期取得
+    useEffect(() => {
+        const fetchStickyNotes = async () => {
+            try {
+                console.log('🔄 付箋データ取得開始');
+                const stickyNotesResponse = await axios.get('/sticky-notes');
+                console.log('📝 取得した付箋データ:', stickyNotesResponse.data);
+                setStickyNotes(stickyNotesResponse.data || []);
+            } catch (error) {
+                console.error('付箋データ取得エラー:', error);
+                setStickyNotes([]);
+            }
+        };
+
+        fetchStickyNotes();
     }, []);
 
     // デバッグ: 初期データの確認
@@ -365,11 +382,6 @@ export default function Dashboard() {
                             task={task}
                             onEdit={(t) => setEditingTask(t)}
                             onDelete={handleTaskDeleted}
-                            onPositionUpdate={(updatedTask) => {
-                                setTasks(prev => prev.map(t => 
-                                    t.id === updatedTask.id ? { ...t, ...updatedTask } : t
-                                ));
-                            }}
                         />
                     ))}
                     
@@ -380,11 +392,6 @@ export default function Dashboard() {
                             stickyNote={stickyNote}
                             onEdit={(sn) => setEditingStickyNote(sn)}
                             onDelete={handleStickyNoteDeleted}
-                            onPositionUpdate={(updatedStickyNote) => {
-                                setStickyNotes(prev => prev.map(sn => 
-                                    sn.id === updatedStickyNote.id ? { ...sn, ...updatedStickyNote } : sn
-                                ));
-                            }}
                         />
                     ))}
 
@@ -394,11 +401,6 @@ export default function Dashboard() {
                             key={`image-${image.id}`}
                             image={image}
                             onDelete={handleImageDeleted}
-                            onPositionUpdate={(updatedImage) => {
-                                setImages(prev => prev.map(img => 
-                                    img.id === updatedImage.id ? { ...img, ...updatedImage } : img
-                                ));
-                            }}
                         />
                     ))}
                 </div>
