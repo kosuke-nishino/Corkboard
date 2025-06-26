@@ -2,8 +2,8 @@ import React, { useRef, useState, useEffect, useCallback } from "react";
 import Moveable from "react-moveable";
 import axios from "axios";
 
-export default function MoveableWrapper({ task, stickyNote, updateUrl = '/task-memos', children, onPositionUpdate }) {
-    const item = task || stickyNote;
+export default function MoveableWrapper({ item, updateUrl, children }) {
+    const item = item;
     const targetRef = useRef(null);
     const frameRef = useRef({
         translate: [0, 0],
@@ -40,8 +40,8 @@ export default function MoveableWrapper({ task, stickyNote, updateUrl = '/task-m
         }
         
         saveTimeoutRef.current = setTimeout(async () => {
-            const currentWidth = parseFloat(targetRef.current.style.width) || baseSize.current?.width || (task ? 200 : 150);
-            const currentHeight = parseFloat(targetRef.current.style.height) || baseSize.current?.height || (task ? 180 : 100);
+            const currentWidth = parseFloat(targetRef.current.style.width) || baseSize.current?.width || item.width || 200;
+            const currentHeight = parseFloat(targetRef.current.style.height) || baseSize.current?.height || item.height || 150;
 
             const payload = {
                 x: Math.round(frameRef.current.translate[0]),
@@ -65,7 +65,7 @@ export default function MoveableWrapper({ task, stickyNote, updateUrl = '/task-m
                 console.error("SAVE ERROR:", err);
             }
         }, 300);
-    }, [item?.id, updateUrl, onPositionUpdate, task]);
+    }, [item?.id, updateUrl, item.width, item.height]);
 
     useEffect(() => {
         console.log("INIT CHECK:", {
@@ -78,11 +78,9 @@ export default function MoveableWrapper({ task, stickyNote, updateUrl = '/task-m
             initialized.current = true;
             
             if (!baseSize.current) {
-                const defaultWidth = task ? 200 : 150;
-                const defaultHeight = task ? 180 : 100;
                 baseSize.current = {
-                    width: item.width ?? defaultWidth,
-                    height: item.height ?? defaultHeight
+                    width: item.width ?? 200,
+                    height: item.height ?? 150
                 };
                 console.log("BASE SIZE SET:", baseSize.current);
             }

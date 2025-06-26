@@ -1,7 +1,7 @@
 import React from 'react';
 import Moveable from './Moveable';
 
-export default function MoveableStickyNote({ stickyNote, onEdit, onDelete, onPositionUpdate }) {
+export default function MoveableStickyNote({ stickyNote, onEdit, onDelete }) {
     return (
         <Moveable stickyNote={stickyNote} updateUrl="/sticky-notes" onPositionUpdate={onPositionUpdate}>
             {({ targetRef, frameRef, isActive, onClick }) => {
