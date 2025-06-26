@@ -29,7 +29,7 @@ export default function Dashboard() {
         const fetchImages = async () => {
             try {
                 console.log('🔄 画像データ取得開始');
-                const imagesResponse = await axios.get('/test/images');
+                const imagesResponse = await axios.get('/test/images?location=dashboard');
                 console.log('📷 取得した画像データ:', imagesResponse.data);
                 setImages(imagesResponse.data || []);
             } catch (error) {
@@ -47,7 +47,7 @@ export default function Dashboard() {
         const fetchStickyNotes = async () => {
             try {
                 console.log('🔄 付箋データ取得開始');
-                const stickyNotesResponse = await axios.get('/sticky-notes');
+                const stickyNotesResponse = await axios.get('/sticky-notes?location=dashboard');
                 console.log('📝 取得した付箋データ:', stickyNotesResponse.data);
                 setStickyNotes(stickyNotesResponse.data || []);
             } catch (error) {
@@ -334,6 +334,7 @@ export default function Dashboard() {
                         <StickyNoteForm
                             onSuccess={handleStickyNoteCreated}
                             onClose={() => setShowStickyNoteForm(false)}
+                            initialLocation="dashboard"
                         />
                     </div>
                 )}
@@ -347,6 +348,7 @@ export default function Dashboard() {
                         <ImageForm
                             onSuccess={handleImageCreated}
                             onClose={() => setShowImageForm(false)}
+                            initialLocation="dashboard"
                         />
                     </div>
                 )}

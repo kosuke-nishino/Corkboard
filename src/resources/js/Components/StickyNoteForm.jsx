@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-export default function StickyNoteForm({ onSuccess, onClose }) {
+export default function StickyNoteForm({ onSuccess, onClose, initialLocation = 'dashboard' }) {
     const [data, setData] = useState({
         content: '',
         color: '#ffeb3b',
         x: 0,
         y: 100,
         z_index: 15,
+        location: initialLocation,
     });
 
     const [processing, setProcessing] = useState(false);
@@ -18,7 +19,7 @@ export default function StickyNoteForm({ onSuccess, onClose }) {
         setProcessing(true);
 
         try {
-            const res = await axios.post('/sticky-notes', data);
+            const res = await axios.post('/sticky-notes', { ...data, location: data.location });
             if (onSuccess) onSuccess(res.data);
 
             setData({

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-export default function ImageForm({ onSuccess, onClose }) {
+export default function ImageForm({ onSuccess, onClose, initialLocation = 'dashboard' }) {
     const [data, setData] = useState({
         z_index: 5,
+        location: initialLocation,
     });
     const [image, setImage] = useState(null);
     const [preview, setPreview] = useState(null);
@@ -39,6 +40,7 @@ export default function ImageForm({ onSuccess, onClose }) {
             const formData = new FormData();
             formData.append('image', image);
             formData.append('z_index', data.z_index);
+            formData.append('location', data.location);
             
             console.log('画像アップロード開始:', {
                 imageSize: image.size,
