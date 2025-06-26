@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Task;
-use App\Models\StickyNote;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -13,11 +12,9 @@ class TaskMemoController extends Controller
     public function index()
 {
     $tasks = Task::where('user_id', Auth::id())->get();
-    $stickyNotes = StickyNote::where('user_id', Auth::id())->get();
 
     return Inertia::render('Dashboard', [
         'tasks' => $tasks,
-        'stickyNotes' => $stickyNotes,
     ]);
 }
 

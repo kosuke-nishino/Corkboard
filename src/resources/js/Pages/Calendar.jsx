@@ -10,10 +10,15 @@ import getDay from 'date-fns/getDay';
 import ja from 'date-fns/locale/ja';
 import "react-big-calendar/lib/css/react-big-calendar.css";
 // カスタムCSSはインラインスタイルで対応
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import TaskForm from "@/Components/TaskForm";
 import EditTaskForm from "@/Components/EditTaskForm";
 import TaskDetail from "@/Components/TaskDetail";
+import StickyNoteForm from "@/Components/StickyNoteForm";
+import ImageForm from '@/Components/ImageForm';
+import EditStickyNoteForm from "@/Components/EditStickyNoteForm";
+import MoveableStickyNote from "@/Components/MoveableStickyNote";
+import MoveableImage from "@/Components/MoveableImage";
 import Modal from "@/Components/Modal";
 import axios from 'axios';
 
@@ -96,11 +101,17 @@ const CustomMonthView = {
 export default function Calendar() {
   const { props } = usePage();
   const [tasks, setTasks] = useState(props.tasks || []);
+  const [stickyNotes, setStickyNotes] = useState([]);
+  const [images, setImages] = useState([]);
   const [showTaskForm, setShowTaskForm] = useState(false);
+  const [showStickyNoteForm, setShowStickyNoteForm] = useState(false);
+  const [showImageForm, setShowImageForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [showTaskDetail, setShowTaskDetail] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [editingStickyNote, setEditingStickyNote] = useState(null);
+  const formContainerRef = useRef(null);
 
   // タスクをカレンダーイベント形式に変換
   const events = tasks.map(task => ({
@@ -229,6 +240,138 @@ export default function Calendar() {
     setShowTaskForm(false);
   };
 
+  // 付箋作成完了時のハンドラー
+  const handleStickyNoteCreated = async (stickyNote) => {
+    const formRect = formContainerRef.current?.getBoundingClientRect();
+    const offsetX = Math.max(100, (formRect?.left || 100) - 50);
+    const offsetY = Math.max(100, (formRect?.top || 100) - 50);
+
+    try {
+      const response = await axios.put(`/sticky-notes/${stickyNote.id}/position`, {
+        x: offsetX,
+        y: offsetY,
+        width: 150,
+        height: 100,
+        rotation: 0,
+        z_index: 15,
+      });
+
+      const newStickyNote = {
+        ...stickyNote,
+        x: offsetX,
+        y: offsetY,
+        width: 150,
+        height: 100,
+        rotation: 0,
+        z_index: 15,
+      };
+
+      setStickyNotes([...stickyNotes, newStickyNote]);
+    } catch (error) {
+      const newStickyNote = {
+        ...stickyNote,
+        x: offsetX,
+        y: offsetY,
+        width: 150,
+        height: 100,
+        rotation: 0,
+        z_index: 15,
+      };
+      setStickyNotes([...stickyNotes, newStickyNote]);
+    }
+
+    setShowStickyNoteForm(false);
+  };
+
+  // 付箋更新完了時のハンドラー
+  const handleStickyNoteUpdated = (updatedStickyNote) => {
+    setStickyNotes((prevStickyNotes) =>
+      prevStickyNotes.map((sn) => (sn.id === updatedStickyNote.id ? updatedStickyNote : sn))
+    );
+    setEditingStickyNote(null);
+  };
+
+  // 付箋削除時のハンドラー
+  const handleStickyNoteDeleted = async (stickyNote) => {
+    try {
+      await axios.delete(`/sticky-notes/${stickyNote.id}`);
+      setStickyNotes((prev) => prev.filter((sn) => sn.id !== stickyNote.id));
+    } catch (error) {
+      console.error('削除エラー:', error);
+      alert('削除に失敗しました');
+    }
+  };
+
+  // 画像作成完了時のハンドラー
+  const handleImageCreated = async (image) => {
+    const formRect = formContainerRef.current?.getBoundingClientRect();
+    const offsetX = Math.max(300, (formRect?.left || 300) - 100);
+    const offsetY = Math.max(300, (formRect?.top || 300) - 100);
+
+    try {
+      const response = await axios.put(`/test/images/${image.id}/position`, {
+        x: offsetX,
+        y: offsetY,
+        width: image.width || 200,
+        height: image.height || 150,
+        rotation: 0,
+        z_index: image.z_index || 5,
+      });
+
+      const newImage = {
+        ...image,
+        x: offsetX,
+        y: offsetY,
+        width: image.width || 200,
+        height: image.height || 150,
+        rotation: 0,
+        z_index: image.z_index || 5,
+      };
+
+      setImages([...images, newImage]);
+    } catch (error) {
+      const newImage = {
+        ...image,
+        x: offsetX,
+        y: offsetY,
+        width: image.width || 200,
+        height: image.height || 150,
+        rotation: 0,
+        z_index: image.z_index || 5,
+      };
+      setImages([...images, newImage]);
+    }
+
+    setShowImageForm(false);
+  };
+
+  // 画像削除時のハンドラー
+  const handleImageDeleted = async (image) => {
+    try {
+      await axios.delete(`/test/images/${image.id}`);
+      setImages((prev) => prev.filter((img) => img.id !== image.id));
+    } catch (error) {
+      console.error('画像削除エラー:', error);
+      alert('画像削除に失敗しました');
+    }
+  };
+
+  // データ取得
+  useEffect(() => {
+    const fetchStickyNotesAndImages = async () => {
+      try {
+        const stickyNotesResponse = await axios.get('/sticky-notes?location=calendar');
+        setStickyNotes(stickyNotesResponse.data || []);
+
+        const imagesResponse = await axios.get('/test/images?location=calendar');
+        setImages(imagesResponse.data || []);
+      } catch (error) {
+        console.error('データ取得エラー:', error);
+      }
+    };
+    fetchStickyNotesAndImages();
+  }, []);
+
   return (
     <AuthenticatedLayout>
 
@@ -301,6 +444,27 @@ export default function Calendar() {
         </div>
       </div>
 
+      {/* 作成ボタン群 */}
+      <div className="absolute top-4 right-4 flex gap-2">
+        <button
+          className="bg-blue-500 hover:bg-blue-600 text-white font-black py-2 px-4 rounded-full shadow"
+          onClick={() => setShowTaskForm(true)}
+        >
+          タスク作成
+        </button>
+        <button 
+          className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded-full shadow"
+          onClick={() => setShowStickyNoteForm(true)}
+        >
+          付箋作成
+        </button>
+        <button 
+          className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-full shadow"
+          onClick={() => setShowImageForm(true)}>
+          画像作成
+        </button>
+      </div>
+
       {/* タスク作成モーダル */}
       <Modal show={showTaskForm} onClose={() => setShowTaskForm(false)} maxWidth="md">
         <TaskForm
@@ -309,6 +473,34 @@ export default function Calendar() {
           onClose={() => setShowTaskForm(false)}
         />
       </Modal>
+
+      {/* 付箋作成フォーム */}
+      {showStickyNoteForm && (
+        <div
+          ref={formContainerRef}
+          className="absolute top-20 left-1/2 transform -translate-x-1/2 z-50"
+        >
+          <StickyNoteForm
+            onSuccess={handleStickyNoteCreated}
+            onClose={() => setShowStickyNoteForm(false)}
+            initialLocation="calendar"
+          />
+        </div>
+      )}
+
+      {/* 画像作成フォーム */}
+      {showImageForm && (
+        <div
+          ref={formContainerRef}
+          className="absolute top-20 left-1/2 transform -translate-x-1/2 z-50"
+        >
+          <ImageForm
+            onSuccess={handleImageCreated}
+            onClose={() => setShowImageForm(false)}
+            initialLocation="calendar"
+          />
+        </div>
+      )}
 
       {/* タスク詳細モーダル */}
       <Modal show={showTaskDetail} onClose={() => setShowTaskDetail(false)}>
@@ -332,6 +524,37 @@ export default function Calendar() {
           />
         )}
       </Modal>
+
+      {/* 付箋編集モーダル */}
+      <Modal show={!!editingStickyNote} onClose={() => setEditingStickyNote(null)}>
+        {editingStickyNote && (
+          <EditStickyNoteForm
+            stickyNote={editingStickyNote}
+            onSuccess={handleStickyNoteUpdated}
+            onClose={() => setEditingStickyNote(null)}
+          />
+        )}
+      </Modal>
+
+      {/* 付箋と画像表示エリア */}
+      <div className="mt-24 relative z-0">
+        {stickyNotes.map((stickyNote) => (
+          <MoveableStickyNote
+            key={`sticky-${stickyNote.id}`}
+            stickyNote={stickyNote}
+            onEdit={(sn) => setEditingStickyNote(sn)}
+            onDelete={handleStickyNoteDeleted}
+          />
+        ))}
+
+        {images.map((image) => (
+          <MoveableImage
+            key={`image-${image.id}`}
+            image={image}
+            onDelete={handleImageDeleted}
+          />
+        ))}
+      </div>
     </AuthenticatedLayout>
   );
 }

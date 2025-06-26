@@ -10,15 +10,21 @@ use Inertia\Inertia;
 
 class ImageController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // テスト用: 認証なしでも動作するように修正
+        $query = Image::query();
+
         if (Auth::check()) {
-            $images = Image::where('user_id', Auth::id())->get();
+            $query->where('user_id', Auth::id());
         } else {
-            // 認証されていない場合は、user_id が null または 1 の画像を取得
-            $images = Image::whereNull('user_id')->orWhere('user_id', 1)->get();
+            $query->whereNull('user_id')->orWhere('user_id', 1);
         }
+
+        if ($request->has('location')) {
+            $query->where('location', $request->input('location'));
+        }
+
+        $images = $query->get();
         return response()->json($images);
     }
 
@@ -39,6 +45,7 @@ class ImageController extends Controller
             'width' => $request->input('width', 200),
             'height' => $request->input('height', 150),
             'rotation' => $request->input('rotation', 0),
+            'location' => $request->input('location', 'dashboard'), // locationを追加
         ]);
 
         return response()->json($image, 201);

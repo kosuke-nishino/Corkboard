@@ -9,14 +9,17 @@ use Inertia\Inertia;
 
 class StickyNoteController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $stickyNotes = StickyNote::where('user_id', Auth::id())->get();
+        $query = StickyNote::where('user_id', Auth::id());
+
+        if ($request->has('location')) {
+            $query->where('location', $request->input('location'));
+        }
         
-        return Inertia::render('Dashboard', [
-            'stickyNotes' => $stickyNotes, 
-    ]);
+        $stickyNotes = $query->get();
         
+        return response()->json($stickyNotes);
     }
 
     public function store(Request $request)
@@ -30,9 +33,11 @@ class StickyNoteController extends Controller
             'rotation' => 'nullable|numeric',
             'z_index' => 'nullable|integer',
             'color' => 'nullable|string|max:20',
+            'location' => 'nullable|string|max:20',
         ]);
 
         $validated['user_id'] = Auth::id();
+        $validated['location'] = $validated['location'] ?? 'dashboard';
 
         $stickyNote = StickyNote::create($validated);
 

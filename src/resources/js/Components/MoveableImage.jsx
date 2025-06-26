@@ -1,205 +1,68 @@
-import React, { useRef, useEffect, useState } from 'react';
-import Moveable from 'react-moveable';
-import axios from 'axios';
+import React from 'react';
+import Moveable from './Moveable';
 
-export default function MoveableImage({ image, onDelete, onPositionUpdate }) {
-    const imageRef = useRef(null);
-    const [isSelected, setIsSelected] = useState(false);
-
-    useEffect(() => {
-        console.log('🖼️ MoveableImage初期化:', {
-            id: image.id,
-            file_path: image.file_path,
-            x: image.x,
-            y: image.y,
-            width: image.width,
-            height: image.height,
-            rotation: image.rotation,
-            z_index: image.z_index
-        });
-    }, [image]);
-
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (imageRef.current && !imageRef.current.contains(event.target)) {
-                setIsSelected(false);
-            }
-        };
-        document.addEventListener('click', handleClickOutside);
-        return () => document.removeEventListener('click', handleClickOutside);
-    }, []);
-
-    const handleDrag = ({ target, left, top }) => {
-        target.style.left = `${left}px`;
-        target.style.top = `${top}px`;
-        if (onPositionUpdate) {
-            onPositionUpdate({
-                ...image,
-                x: left,
-                y: top,
-            });
-        }
-    };
-
-    const handleDragEnd = async ({ target }) => {
-        const parentRect = target.parentElement.getBoundingClientRect();
-        const originalTransform = target.style.transform;
-        target.style.transform = 'none';
-        const rect = target.getBoundingClientRect();
-        target.style.transform = originalTransform;
-
-        const newX = rect.left - parentRect.left;
-        const newY = rect.top - parentRect.top;
-
-        try {
-            await axios.put(`/test/images/${image.id}/position`, {
-                x: newX,
-                y: newY,
-                rotation: image.rotation,
-            });
-            console.log('✅ 画像位置保存完了');
-        } catch (error) {
-            console.error('❌ 画像位置保存エラー:', error);
-        }
-    };
-
-    const handleResize = ({ target, width, height, drag }) => {
-        target.style.width = `${width}px`;
-        target.style.height = `${height}px`;
-        if (drag) {
-            target.style.left = `${drag.left}px`;
-            target.style.top = `${drag.top}px`;
-        }
-        if (onPositionUpdate) {
-            onPositionUpdate({
-                ...image,
-                width,
-                height,
-                x: drag ? drag.left : image.x,
-                y: drag ? drag.top : image.y,
-            });
-        }
-    };
-
-    const handleResizeEnd = async ({ target }) => {
-        const parentRect = target.parentElement.getBoundingClientRect();
-        const originalTransform = target.style.transform;
-        target.style.transform = 'none';
-        const rect = target.getBoundingClientRect();
-        target.style.transform = originalTransform;
-
-        const newX = rect.left - parentRect.left;
-        const newY = rect.top - parentRect.top;
-        const newWidth = rect.width;
-        const newHeight = rect.height;
-
-        try {
-            await axios.put(`/test/images/${image.id}/position`, {
-                x: newX,
-                y: newY,
-                width: newWidth,
-                height: newHeight,
-                rotation: image.rotation,
-            });
-            console.log('✅ 画像サイズ保存完了');
-        } catch (error) {
-            console.error('❌ 画像サイズ保存エラー:', error);
-        }
-    };
-
-    const handleRotate = ({ target, rotate }) => {
-        target.style.transform = `rotate(${rotate}deg)`;
-        if (onPositionUpdate) {
-            onPositionUpdate({
-                ...image,
-                rotation: rotate,
-            });
-        }
-    };
-
-    const handleRotateEnd = async () => {
-        try {
-            await axios.put(`/test/images/${image.id}/position`, {
-                rotation: image.rotation,
-            });
-            console.log('✅ 画像回転保存完了');
-        } catch (error) {
-            console.error('❌ 画像回転保存エラー:', error);
-        }
-    };
-
+export default function MoveableImage({ image, onDelete }) {
     return (
-        <>
-            <div
-                ref={imageRef}
-                className={`absolute cursor-pointer group ${isSelected ? 'ring-2 ring-blue-400' : ''}`}
-                style={{
-                    left: `${image.x || 300}px`,
-                    top: `${image.y || 300}px`,
-                    width: `${image.width || 200}px`,
-                    height: `${image.height || 150}px`,
-                    transform: `rotate(${image.rotation || 0}deg)`,
-                    zIndex: image.z_index || 5,
-                }}
-                onClick={(e) => {
-                    e.stopPropagation();
-                    setIsSelected(true);
-                }}
-            >
-                {image.file_path ? (
-                    <img
-                        src={`/storage/${image.file_path}`}
-                        alt="アップロード画像"
-                        className="w-full h-full object-cover rounded shadow-lg"
-                        draggable={false}
-                    />
-                ) : (
-                    <div className="w-full h-full bg-gray-200 border-2 border-dashed border-gray-400 rounded flex items-center justify-center">
-                        <span className="text-gray-500 text-sm">画像なし</span>
-                    </div>
-                )}
+        <Moveable item={image} updateUrl="/test/images">
+            {({ targetRef, frameRef, isActive, onClick }) => {
+                const translateX = frameRef.current?.translate?.[0] ?? image.x ?? 0;
+                const translateY = frameRef.current?.translate?.[1] ?? image.y ?? 0;
+                const rotate = frameRef.current?.rotate ?? image.rotation ?? 0;
+                const scaleX = frameRef.current?.scale?.[0] ?? 1;
+                const scaleY = frameRef.current?.scale?.[1] ?? 1;
 
-                {/* 削除ボタン → 選択時だけ表示 */}
-                {isSelected && (
-                    <div className="absolute top-1 right-1 flex gap-1">
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                if (confirm('この画像を削除しますか？')) {
-                                    onDelete(image);
-                                }
-                            }}
-                            className="bg-red-500 text-white text-xs px-1 py-1 rounded hover:bg-red-600 shadow"
-                            style={{ fontSize: '10px', lineHeight: '1' }}
-                        >
-                            🗑
-                        </button>
-                    </div>
-                )}
-            </div>
+                return (
+                    <div
+                        ref={targetRef}
+                        onClick={onClick}
+                        style={{
+                            width: `${image.width ?? 200}px`,
+                            height: `${image.height ?? 150}px`,
+                            transform: `
+                                translate(${translateX}px, ${translateY}px)
+                                rotate(${rotate}deg)
+                                scale(${scaleX}, ${scaleY})
+                            `,
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            zIndex: image.z_index || 5,
+                            cursor: "move",
+                            border: isActive ? "2px solid #4285F4" : "none",
+                        }}
+                    >
+                        {image.file_path ? (
+                            <img
+                                src={`/storage/${image.file_path}`}
+                                alt="アップロード画像"
+                                className="w-full h-full object-cover rounded shadow-lg"
+                                draggable={false}
+                            />
+                        ) : (
+                            <div className="w-full h-full bg-gray-200 border-2 border-dashed border-gray-400 rounded flex items-center justify-center">
+                                <span className="text-gray-500 text-sm">画像なし</span>
+                            </div>
+                        )}
 
-            {/* Moveable コンポーネント → 選択時だけ表示 */}
-            {isSelected && (
-                <Moveable
-                    target={imageRef.current}
-                    draggable
-                    resizable
-                    rotatable
-                    keepRatio={false}
-                    origin={false}
-                    throttleDrag={1}
-                    throttleResize={1}
-                    throttleRotate={1}
-                    renderDirections={["nw", "n", "ne", "w", "e", "sw", "s", "se"]}
-                    onDrag={handleDrag}
-                    onDragEnd={handleDragEnd}
-                    onResize={handleResize}
-                    onResizeEnd={handleResizeEnd}
-                    onRotate={handleRotate}
-                    onRotateEnd={handleRotateEnd}
-                    className="moveable-control"
-                />
-            )}
-        </>
+                        {isActive && (
+                            <div className="absolute top-1 right-1 flex gap-1">
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (confirm('この画像を削除しますか？')) {
+                                            onDelete(image);
+                                        }
+                                    }}
+                                    className="bg-red-500 text-white text-xs px-1 py-1 rounded hover:bg-red-600 shadow"
+                                    style={{ fontSize: '10px', lineHeight: '1' }}
+                                >
+                                    🗑
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                );
+            }}
+        </Moveable>
     );
 }
